@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A fully interactive 3 by 3 Rubik's Cube.">
+  <title>Interactive Rubik's Cube</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app" aria-labelledby="page-title">
+    <section class="content">
+      <p class="eyebrow">Interactive 3 × 3 puzzle</p>
+      <h1 id="page-title">Rubik’s Cube</h1>
+      <p class="intro">Drag the cube to inspect every side. Use the face turns to play manually, or shuffle and solve it automatically.</p>
+
+      <div class="actions" aria-label="Puzzle actions">
+        <button class="button button-primary" type="button" id="shuffle">Shuffle</button>
+        <button class="button" type="button" id="solve" disabled>Solve</button>
+        <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Tutor mode</button>
+      </div>
+
+      <fieldset class="turns" id="turn-controls">
+        <legend>Turn a face</legend>
+        <div class="turn-grid">
+          <div><span>Up</span><button type="button" data-move="U">↻</button><button type="button" data-move="U'">↺</button></div>
+          <div><span>Right</span><button type="button" data-move="R">↻</button><button type="button" data-move="R'">↺</button></div>
+          <div><span>Front</span><button type="button" data-move="F">↻</button><button type="button" data-move="F'">↺</button></div>
+          <div><span>Down</span><button type="button" data-move="D">↻</button><button type="button" data-move="D'">↺</button></div>
+          <div><span>Left</span><button type="button" data-move="L">↻</button><button type="button" data-move="L'">↺</button></div>
+          <div><span>Back</span><button type="button" data-move="B">↻</button><button type="button" data-move="B'">↺</button></div>
+        </div>
+      </fieldset>
+      <p class="status" id="status" role="status" aria-live="polite">Solved. Drag to rotate the view.</p>
+      <section class="tutor" id="tutor" hidden aria-labelledby="tutor-title">
+        <div class="tutor-heading">
+          <p class="eyebrow">Beginner lesson <span id="tutor-count">1 of 8</span></p>
+          <h2 id="tutor-title"></h2>
+        </div>
+        <p id="tutor-body"></p>
+        <p class="tutor-tip" id="tutor-tip"></p>
+        <div class="notation" id="tutor-moves" aria-label="Moves for this lesson"></div>
+        <div class="tutor-actions">
+          <button type="button" id="tutor-prev">Back</button>
+          <button type="button" id="tutor-next">Next step</button>
+          <button class="button-primary" type="button" id="tutor-demo" hidden>Practice this move</button>
+        </div>
+      </section>
+    </section>
+
+    <section class="cube-panel" aria-label="Interactive Rubik's Cube">
+      <p class="drag-tip" id="drag-tip">Drag to rotate</p>
+      <div class="cube-viewport" id="cube-viewport">
+        <div class="cube" id="cube" role="img" aria-describedby="drag-tip" aria-label="Solved Rubik's Cube. Drag to inspect all six faces.">
+          <div class="face face-f" data-face="F"></div>
+          <div class="face face-b" data-face="B"></div>
+          <div class="face face-r" data-face="R"></div>
+          <div class="face face-l" data-face="L"></div>
+          <div class="face face-u" data-face="U"></div>
+          <div class="face face-d" data-face="D"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script src="cube.js"></script>
+</body>
+</html>
