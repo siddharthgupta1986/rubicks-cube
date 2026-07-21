@@ -78,6 +78,12 @@
         element.append(cell);
       }
     });
+    updateCubeLabel();
+  }
+
+  function updateCubeLabel() {
+    const arrangement = history.length ? 'with turns applied' : 'at its starting arrangement';
+    cube.setAttribute('aria-label', "Interactive Rubik's Cube " + arrangement + '. Drag to inspect all six faces.');
   }
 
   function turn(move, record = true) {
@@ -151,8 +157,8 @@
 
   shuffleButton.addEventListener('click', async () => {
     if (busy) return;
-    initialize();
     history = [];
+    initialize();
     status.textContent = 'Shuffling…';
     await runSequence(shuffleMoves(), true);
     status.textContent = 'Shuffled. Drag to inspect it or make a face turn.';
@@ -164,6 +170,7 @@
     const solution = [...history].reverse().map(inverse);
     await runSequence(solution, false);
     history = [];
+    updateCubeLabel();
     solveButton.disabled = true;
     status.textContent = 'Solved — every face is back in place.';
   });
