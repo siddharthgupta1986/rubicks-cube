@@ -79,6 +79,7 @@
   const twoPlayerEnd = document.getElementById('two-player-end');
   const twoPlayerReset = document.getElementById('two-player-reset');
   const twoPlayerStatus = document.getElementById('two-player-status');
+  const twoPlayerTime = document.getElementById('two-player-time');
   const twoPlayerScore = document.getElementById('two-player-score');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
@@ -169,6 +170,7 @@
   let pointer = null;
   let studioMoves = [];
   let twoPlayerState = { phase: 'idle', players: [{ name: 'Player 1', score: 0 }, { name: 'Player 2', score: 0 }], activeIndex: 0, startedAt: 0, moves: [0, 0], timesMs: [0, 0], winner: '' };
+  let twoPlayerTimerId = 0;
   let tutorStep = 0;
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
@@ -1159,6 +1161,10 @@
     if (record && twoPlayerState.phase === 'playing') twoPlayerState.moves[twoPlayerState.activeIndex] += 1;
     render();
     triggerFeedback('turn');
+    if (record && twoPlayerState.phase === 'playing' && history.length > 0 && isSolvedState()) {
+      finishTwoPlayerRound(twoPlayerState.activeIndex);
+      renderTwoPlayer();
+    }
     if (record) checkActiveMission();
   }
 
@@ -1260,12 +1266,16 @@
   }
 
   function resetTwoPlayerState() {
+    if (twoPlayerTimerId) window.clearInterval(twoPlayerTimerId);
+    twoPlayerTimerId = 0;
     twoPlayerState = { phase: 'idle', players: [{ name: 'Player 1', score: 0 }, { name: 'Player 2', score: 0 }], activeIndex: 0, startedAt: 0, moves: [0, 0], timesMs: [0, 0], winner: '' };
   }
 
   function startTwoPlayerRound(names = ['Player 1', 'Player 2']) {
+    if (twoPlayerTimerId) window.clearInterval(twoPlayerTimerId);
     const cleanNames = names.map((name, index) => String(name || '').trim().slice(0, 24) || `Player ${index + 1}`);
     twoPlayerState = { phase: 'playing', players: cleanNames.map(name => ({ name, score: 0 })), activeIndex: 0, startedAt: performance.now(), moves: [0, 0], timesMs: [0, 0], winner: '' };
+    twoPlayerTimerId = window.setInterval(renderTwoPlayer, 100);
     return { ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })) };
   }
 
@@ -1283,12 +1293,16 @@
     twoPlayerState.players[winnerIndex].score += 1;
     twoPlayerState.winner = twoPlayerState.players[winnerIndex].name;
     twoPlayerState.phase = 'complete';
+    if (twoPlayerTimerId) window.clearInterval(twoPlayerTimerId);
+    twoPlayerTimerId = 0;
     return true;
   }
 
   function renderTwoPlayer() {
     const active = twoPlayerState.phase === 'playing' ? twoPlayerState.players[twoPlayerState.activeIndex].name : '';
     twoPlayerStatus.textContent = twoPlayerState.phase === 'idle' ? 'Ready for two players.' : twoPlayerState.phase === 'complete' ? `${twoPlayerState.winner} wins the round.` : `${active} is up. ${twoPlayerState.moves[twoPlayerState.activeIndex]} moves played.`;
+    const activeTime = twoPlayerState.phase === 'playing' ? twoPlayerState.timesMs[twoPlayerState.activeIndex] + performance.now() - twoPlayerState.startedAt : twoPlayerState.timesMs[twoPlayerState.activeIndex];
+    twoPlayerTime.textContent = `Active time: ${formatDuration(activeTime)}`;
     twoPlayerScore.replaceChildren(...twoPlayerState.players.map((player, index) => {
       const item = document.createElement('span');
       item.className = `two-player-score-item${twoPlayerState.phase === 'playing' && index === twoPlayerState.activeIndex ? ' is-active' : ''}`;
