@@ -18,6 +18,7 @@
         <button class="button button-primary" type="button" id="shuffle">Shuffle</button>
         <button class="button" type="button" id="daily-challenge">Daily challenge</button>
         <button class="button" type="button" id="speedrun-toggle" aria-expanded="false" aria-controls="speedrun">Speedrun</button>
+        <button class="button" type="button" id="missions-toggle" aria-expanded="false" aria-controls="missions">Missions</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -49,6 +50,11 @@
           <div class="speedrun-stats-heading"><h3 id="speedrun-stats-title">Personal bests</h3><button type="button" id="speedrun-clear">Clear history</button></div>
           <p id="speedrun-stats-summary">Best: — · Ao5: — · Ao12: —</p>
         </div>
+      </section>
+
+      <section class="missions" id="missions" hidden aria-labelledby="missions-title">
+        <div class="missions-heading"><div><p class="eyebrow">Mini challenges</p><h2 id="missions-title">Challenge cards</h2></div><button type="button" id="missions-close">Close</button></div>
+        <div class="mission-list" id="mission-list"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">
