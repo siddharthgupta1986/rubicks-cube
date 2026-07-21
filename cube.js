@@ -28,9 +28,16 @@
   const tutorDemo = document.getElementById('tutor-demo');
   const faceElements = [...document.querySelectorAll('[data-face]')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
   let stickers = [];
   let history = [];
   let busy = false;
+  let dailyChallengeActive = false;
+  let dailyChallengePreparing = false;
+  let dailyChallengeStartedAt = 0;
+  let dailyChallengePlayerMoves = 0;
+  let dailyChallengeDateKey = '';
+  let dailyResults = {};
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -98,6 +105,59 @@
     return moves;
   }
 
+  function loadDailyResults() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(dailyStorageKey) || '{}');
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveDailyResult(dateKey, result) {
+    dailyResults[dateKey] = result;
+    try {
+      window.localStorage.setItem(dailyStorageKey, JSON.stringify(dailyResults));
+    } catch (error) {
+      // Private browsing modes can deny storage; the challenge still works in memory.
+    }
+  }
+
+  function startDailyResult(dateKey) {
+    const previous = dailyResults[dateKey];
+    dailyChallengeActive = true;
+    dailyChallengeDateKey = dateKey;
+    dailyChallengeStartedAt = Date.now();
+    dailyChallengePlayerMoves = 0;
+    saveDailyResult(dateKey, {
+      started: true,
+      completed: false,
+      startedAt: dailyChallengeStartedAt,
+      moves: 0,
+      best: previous && Number.isFinite(previous.best) ? previous.best : null
+    });
+  }
+
+  function completeDailyResult(dateKey) {
+    if (!dailyChallengeActive) return;
+    const elapsed = Math.max(0, Date.now() - dailyChallengeStartedAt);
+    const previous = dailyResults[dateKey];
+    const best = previous && Number.isFinite(previous.best)
+      ? Math.min(previous.best, elapsed)
+      : elapsed;
+    saveDailyResult(dateKey, {
+      started: true,
+      completed: true,
+      startedAt: dailyChallengeStartedAt,
+      completedAt: Date.now(),
+      timeMs: elapsed,
+      moves: dailyChallengePlayerMoves,
+      best
+    });
+    dailyChallengeActive = false;
+    dailyChallengeDateKey = '';
+  }
+
   function rotateVector(vector, axis) {
     const perpendicular = cross(axis, vector);
     const parallel = dot(vector, axis);
@@ -144,6 +204,16 @@
       }
     });
     if (record) history.push(move);
+    if (record && dailyChallengeActive && !dailyChallengePreparing) {
+      dailyChallengePlayerMoves += 1;
+      const progress = dailyResults[dailyChallengeDateKey] || {};
+      saveDailyResult(dailyChallengeDateKey, {
+        ...progress,
+        started: true,
+        completed: false,
+        moves: dailyChallengePlayerMoves
+      });
+    }
     render();
   }
 
@@ -206,6 +276,9 @@
 
   shuffleButton.addEventListener('click', async () => {
     if (busy) return;
+    dailyChallengeActive = false;
+    dailyChallengePreparing = false;
+    dailyChallengeDateKey = '';
     history = [];
     initialize();
     status.textContent = 'Shuffling…';
@@ -219,7 +292,10 @@
     history = [];
     const dateKey = getLocalDateKey();
     status.textContent = `Starting the ${dateKey} daily challenge…`;
+    startDailyResult(dateKey);
+    dailyChallengePreparing = true;
     await runSequence(dailyScrambleMoves(), true);
+    dailyChallengePreparing = false;
     status.textContent = `Daily challenge ready for ${dateKey}. Solve it at your own pace.`;
   });
 
@@ -228,6 +304,7 @@
     status.textContent = 'Solving…';
     const solution = [...history].reverse().map(inverse);
     await runSequence(solution, false);
+    completeDailyResult(dailyChallengeDateKey);
     history = [];
     updateCubeLabel();
     solveButton.disabled = true;
@@ -272,6 +349,7 @@
   viewport.addEventListener('pointercancel', releasePointer);
 
   initialize();
+  dailyResults = loadDailyResults();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
