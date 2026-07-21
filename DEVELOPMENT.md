@@ -37,5 +37,6 @@
 - The requested behavior works without a backend or package installation.
 - The cube can still be dragged and all six faces render correctly.
 - Shuffle → Solve restores the exact solved state.
+- Open Missions, start a card, use a manual turn and Solve, then switch to Shuffle, Guided solve, and Speedrun; mission status must not leak into those workflows.
 - The HTML parser and JavaScript syntax checks pass.
 - Documentation is updated if the public behavior or file layout changes.

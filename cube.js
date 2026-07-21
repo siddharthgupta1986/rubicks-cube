@@ -354,6 +354,7 @@
       return;
     }
     initialize();
+    cancelMission();
     history = [];
     speedrunMoveCount = 0;
     speedrunMoves.textContent = 'Moves: 0';
@@ -436,6 +437,12 @@
     await runSequence(mission.setup, true);
     missionPreparing = false;
     status.textContent = `${mission.title} started. ${mission.goal}`;
+  }
+
+  function cancelMission() {
+    activeMission = null;
+    missionPreparing = false;
+    renderMissions();
   }
 
   function checkActiveMission() {
@@ -691,6 +698,7 @@
 
   shuffleButton.addEventListener('click', async () => {
     if (busy) return;
+    cancelMission();
     dailyChallengeActive = false;
     dailyChallengePreparing = false;
     dailyChallengeDateKey = '';
@@ -704,6 +712,7 @@
 
   dailyChallengeButton.addEventListener('click', async () => {
     if (busy) return;
+    cancelMission();
     initialize();
     history = [];
     hideCelebration();
