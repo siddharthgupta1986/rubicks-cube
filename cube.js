@@ -80,6 +80,10 @@
   const replayStorageKey = 'rubiks-cube.replays.v1';
   const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
   const progressStorageKey = 'rubiks-cube.progress.v1';
+  const keyboardShortcuts = Object.freeze({
+    'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
+    'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
+  });
   const cubeStateVersion = 1;
   const replayVersion = 1;
   let stickers = [];
@@ -1308,5 +1312,6 @@
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
   window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
+  window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts } });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
