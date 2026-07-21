@@ -64,6 +64,7 @@
   const missionStorageKey = 'rubiks-cube.missions.v1';
   const replayStorageKey = 'rubiks-cube.replays.v1';
   const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
+  const cubeStateVersion = 1;
   const replayVersion = 1;
   let stickers = [];
   let history = [];
@@ -183,6 +184,22 @@
     } catch (error) {
       throw new Error('Replay code is invalid.');
     }
+  }
+
+  function createCubeStateSnapshot() {
+    return {
+      version: cubeStateVersion,
+      stickers: stickers.map(sticker => ({ position: sticker.position.slice(), normal: sticker.normal.slice(), color: sticker.color }))
+        .sort((a, b) => {
+          const aKey = `${a.position}|${a.normal}`;
+          const bKey = `${b.position}|${b.normal}`;
+          return aKey < bKey ? -1 : aKey > bKey ? 1 : 0;
+        })
+    };
+  }
+
+  function serializeCubeState() {
+    return JSON.stringify(createCubeStateSnapshot());
   }
 
   function createSeededRandom(seed) {
@@ -1119,5 +1136,6 @@
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
+  window.RubiksCubeState = Object.freeze({ export: serializeCubeState, version: cubeStateVersion });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
