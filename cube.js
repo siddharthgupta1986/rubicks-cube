@@ -84,6 +84,7 @@
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
   });
+  const gamepadShortcuts = Object.freeze({ 0: 'R', 1: 'U', 2: "R'", 3: "U'", 4: 'F', 5: "F'" });
   const cubeStateVersion = 1;
   const replayVersion = 1;
   let stickers = [];
@@ -111,6 +112,8 @@
   let selectedAlgorithmCategory = 'all';
   let algorithmProgress = {};
   let progressEvents = [];
+  let gamepadTimerId = 0;
+  let gamepadButtons = [];
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -782,6 +785,24 @@
     return true;
   }
 
+  function pollGamepads() {
+    if (!navigator.getGamepads) return;
+    const pads = navigator.getGamepads();
+    const pad = [...pads].find(Boolean);
+    if (!pad) return;
+    pad.buttons.forEach((button, index) => {
+      const pressed = button.pressed;
+      if (pressed && !gamepadButtons[index] && gamepadShortcuts[index] && !busy) {
+        const move = gamepadShortcuts[index];
+        turn(move);
+        solveButton.disabled = false;
+        status.textContent = `${move} turn applied from the gamepad.`;
+        if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
+      }
+      gamepadButtons[index] = pressed;
+    });
+  }
+
   function checkActiveMission() {
     if (!activeMission || missionPreparing) return;
     const mission = missionData.find(item => item.id === activeMission);
@@ -1062,6 +1083,9 @@
     announceGuidedProgress();
     if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
   });
+  if (navigator.getGamepads) gamepadTimerId = window.setInterval(pollGamepads, 100);
+  window.addEventListener('gamepadconnected', () => { status.textContent = 'Gamepad connected. Face-turn buttons are ready.'; });
+  window.addEventListener('gamepaddisconnected', () => { gamepadButtons = []; status.textContent = 'Gamepad disconnected.'; });
 
   shuffleButton.addEventListener('click', async () => {
     if (busy) return;
@@ -1338,6 +1362,6 @@
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
   window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
-  window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts } });
+  window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
