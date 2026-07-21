@@ -369,7 +369,11 @@
         chip.textContent = move;
         notation.append(chip);
       });
-      card.append(title, meta, goal, orientation, explanation, notation);
+      const practice = document.createElement('button');
+      practice.type = 'button';
+      practice.dataset.algorithm = algorithm.id;
+      practice.textContent = 'Practice';
+      card.append(title, meta, goal, orientation, explanation, notation, practice);
       return card;
     }));
   }
@@ -990,6 +994,17 @@
   algorithmCategory.addEventListener('change', event => {
     selectedAlgorithmCategory = event.target.value;
     renderAlgorithms();
+  });
+  algorithmList.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-algorithm]');
+    if (!button || busy) return;
+    const algorithm = algorithmCatalog.find(item => item.id === button.dataset.algorithm);
+    if (!algorithm) return;
+    initialize();
+    history = [];
+    status.textContent = `Practising ${algorithm.title}…`;
+    await runSequence(algorithm.moves, true);
+    status.textContent = `${algorithm.title} practice applied. Use Solve to undo it.`;
   });
   themeSelect.addEventListener('change', event => {
     setTheme(event.target.value);
