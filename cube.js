@@ -20,6 +20,8 @@
   const speedrunStart = document.getElementById('speedrun-start');
   const speedrunReset = document.getElementById('speedrun-reset');
   const speedrunInspection = document.getElementById('speedrun-inspection');
+  const speedrunClear = document.getElementById('speedrun-clear');
+  const speedrunStatsSummary = document.getElementById('speedrun-stats-summary');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -41,6 +43,7 @@
   const faceElements = [...document.querySelectorAll('[data-face]')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
+  const speedrunStorageKey = 'rubiks-cube.speedrun.v1';
   let stickers = [];
   let history = [];
   let busy = false;
@@ -57,6 +60,7 @@
   let speedrunInspectionEndsAt = 0;
   let speedrunMoveCount = 0;
   let speedrunSetup = false;
+  let speedrunRecords = [];
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -142,6 +146,40 @@
     } catch (error) {
       return {};
     }
+  }
+
+  function loadSpeedrunRecords() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(speedrunStorageKey) || '[]');
+      return Array.isArray(stored) ? stored.filter(record => record && Number.isFinite(record.timeMs) && Number.isFinite(record.moves)) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveSpeedrunRecords() {
+    try {
+      window.localStorage.setItem(speedrunStorageKey, JSON.stringify(speedrunRecords));
+    } catch (error) {
+      // Private browsing modes can deny storage; the current run still works in memory.
+    }
+  }
+
+  function averageSpeedrunTime(count) {
+    const recent = speedrunRecords.slice(-count);
+    return recent.length < count ? '—' : formatSpeedrunTime(recent.reduce((sum, record) => sum + record.timeMs, 0) / count);
+  }
+
+  function renderSpeedrunStats() {
+    const best = speedrunRecords.length ? Math.min(...speedrunRecords.map(record => record.timeMs)) : null;
+    speedrunStatsSummary.textContent = `Best: ${best === null ? '—' : formatSpeedrunTime(best)} · Ao5: ${averageSpeedrunTime(5)} · Ao12: ${averageSpeedrunTime(12)}`;
+  }
+
+  function recordSpeedrun() {
+    speedrunRecords.push({ timeMs: Math.max(0, performance.now() - speedrunStartedAt), moves: speedrunMoveCount, date: new Date().toISOString() });
+    speedrunRecords = speedrunRecords.slice(-100);
+    saveSpeedrunRecords();
+    renderSpeedrunStats();
   }
 
   function saveDailyResult(dateKey, result) {
@@ -232,6 +270,7 @@
     if (speedrunState !== 'running') return;
     const elapsed = performance.now() - speedrunStartedAt;
     stopSpeedrunTimer();
+    recordSpeedrun();
     setSpeedrunState('completed');
     speedrunTime.textContent = formatSpeedrunTime(elapsed);
     status.textContent = `Speedrun complete in ${formatSpeedrunTime(elapsed)} with ${speedrunMoveCount} moves.`;
@@ -556,6 +595,12 @@
   });
   speedrunStart.addEventListener('click', startSpeedrun);
   speedrunReset.addEventListener('click', resetSpeedrun);
+  speedrunClear.addEventListener('click', () => {
+    speedrunRecords = [];
+    saveSpeedrunRecords();
+    renderSpeedrunStats();
+    status.textContent = 'Speedrun history cleared.';
+  });
 
   solveButton.addEventListener('click', async () => {
     if (busy || !history.length) return;
@@ -625,6 +670,8 @@
 
   initialize();
   dailyResults = loadDailyResults();
+  speedrunRecords = loadSpeedrunRecords();
+  renderSpeedrunStats();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
