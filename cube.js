@@ -1145,6 +1145,18 @@
   document.addEventListener('keydown', event => {
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return;
+    const cameraStep = event.shiftKey ? 20 : 10;
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (event.key === 'ArrowLeft') rotation.y -= cameraStep;
+      if (event.key === 'ArrowRight') rotation.y += cameraStep;
+      if (event.key === 'ArrowUp') rotation.x = Math.max(-78, rotation.x - cameraStep);
+      if (event.key === 'ArrowDown') rotation.x = Math.min(78, rotation.x + cameraStep);
+      updateView();
+      cameraStatus.textContent = 'Custom view active.';
+      status.textContent = 'Camera rotated from the keyboard. Puzzle state unchanged.';
+      return;
+    }
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
       if (undoLastMove()) event.preventDefault();
       return;
