@@ -63,6 +63,7 @@
   const themeStorageKey = 'rubiks-cube.theme.v1';
   const missionStorageKey = 'rubiks-cube.missions.v1';
   const replayStorageKey = 'rubiks-cube.replays.v1';
+  const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
   const replayVersion = 1;
   let stickers = [];
   let history = [];
@@ -87,6 +88,7 @@
   let missionProgress = {};
   let replayRecords = [];
   let selectedAlgorithmCategory = 'all';
+  let algorithmProgress = {};
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -268,6 +270,23 @@
     }
   }
 
+  function loadAlgorithmProgress() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(algorithmStorageKey) || '{}');
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveAlgorithmProgress() {
+    try {
+      window.localStorage.setItem(algorithmStorageKey, JSON.stringify(algorithmProgress));
+    } catch (error) {
+      // Private browsing modes can deny storage; the current practice still works in memory.
+    }
+  }
+
   function loadReplayRecords() {
     try {
       const stored = JSON.parse(window.localStorage.getItem(replayStorageKey) || '[]');
@@ -354,7 +373,8 @@
       title.textContent = algorithm.title;
       const meta = document.createElement('div');
       meta.className = 'algorithm-meta';
-      meta.textContent = `${algorithm.category} · ${algorithm.difficulty}`;
+      const progress = algorithmProgress[algorithm.id];
+      meta.textContent = `${algorithm.category} · ${algorithm.difficulty}${progress?.count ? ` · Practised ${progress.count}x` : ''}`;
       const goal = document.createElement('p');
       goal.textContent = `Goal: ${algorithm.goal}`;
       const orientation = document.createElement('p');
@@ -1004,6 +1024,9 @@
     history = [];
     status.textContent = `Practising ${algorithm.title}…`;
     await runSequence(algorithm.moves, true);
+    algorithmProgress[algorithm.id] = { count: (algorithmProgress[algorithm.id]?.count || 0) + 1, lastPractised: new Date().toISOString() };
+    saveAlgorithmProgress();
+    renderAlgorithms();
     status.textContent = `${algorithm.title} practice applied. Use Solve to undo it.`;
   });
   themeSelect.addEventListener('change', event => {
@@ -1084,6 +1107,7 @@
   speedrunRecords = loadSpeedrunRecords();
   renderSpeedrunStats();
   setTheme(loadTheme());
+  algorithmProgress = loadAlgorithmProgress();
   missionProgress = loadMissionProgress();
   renderMissions();
   replayRecords = loadReplayRecords();
