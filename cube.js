@@ -44,6 +44,12 @@
   const stateInput = document.getElementById('state-input');
   const stateImport = document.getElementById('state-import');
   const stateReset = document.getElementById('state-reset');
+  const progressToggle = document.getElementById('progress-toggle');
+  const progressPanel = document.getElementById('progress');
+  const progressClose = document.getElementById('progress-close');
+  const progressSummary = document.getElementById('progress-summary');
+  const progressMonthInput = document.getElementById('progress-month-input');
+  const progressCalendar = document.getElementById('progress-calendar');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -368,6 +374,43 @@
     progressEvents.push({ type, id, date });
     saveProgressEvents();
     return true;
+  }
+
+  function progressDateSet() {
+    return new Set(progressEvents.map(event => event.date));
+  }
+
+  function streakLength(dates, startDate) {
+    let count = 0;
+    const cursor = new Date(`${startDate}T12:00:00`);
+    while (dates.has(getLocalDateKey(cursor))) {
+      count += 1;
+      cursor.setDate(cursor.getDate() - 1);
+    }
+    return count;
+  }
+
+  function renderProgress() {
+    const dates = progressDateSet();
+    const today = getLocalDateKey();
+    const sorted = [...dates].sort();
+    const longest = sorted.reduce((best, date) => Math.max(best, streakLength(dates, date)), 0);
+    progressSummary.textContent = `Current streak: ${streakLength(dates, today)} days · Longest streak: ${longest} days · ${dates.size} active days`;
+    const monthKey = progressMonthInput.value || today.slice(0, 7);
+    const [year, month] = monthKey.split('-').map(Number);
+    const first = new Date(year, month - 1, 1);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const cells = [];
+    for (let index = 0; index < first.getDay(); index += 1) cells.push(null);
+    for (let day = 1; day <= daysInMonth; day += 1) cells.push(`${monthKey}-${String(day).padStart(2, '0')}`);
+    progressCalendar.replaceChildren(...cells.map(date => {
+      const cell = document.createElement('div');
+      cell.className = date ? `calendar-day${dates.has(date) ? ' is-complete' : ''}` : 'calendar-day is-empty';
+      cell.setAttribute('role', 'gridcell');
+      cell.textContent = date ? String(Number(date.slice(-2))) : '';
+      if (date) cell.setAttribute('aria-label', `${date}${dates.has(date) ? ', completed activity' : ''}`);
+      return cell;
+    }));
   }
 
   function loadReplayRecords() {
@@ -1138,6 +1181,19 @@
     stateInput.value = serializeCubeState();
     status.textContent = 'Cube reset to solved state.';
   });
+  progressMonthInput.value = getLocalDateKey().slice(0, 7);
+  progressToggle.addEventListener('click', () => {
+    progressPanel.hidden = false;
+    progressToggle.setAttribute('aria-expanded', 'true');
+    renderProgress();
+    status.textContent = 'Progress calendar opened.';
+  });
+  progressClose.addEventListener('click', () => {
+    progressPanel.hidden = true;
+    progressToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Progress calendar closed.';
+  });
+  progressMonthInput.addEventListener('change', renderProgress);
   algorithmList.addEventListener('click', async event => {
     const button = event.target.closest('button[data-algorithm]');
     if (!button || busy) return;

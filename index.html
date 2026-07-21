@@ -22,6 +22,7 @@
         <button class="button" type="button" id="replays-toggle" aria-expanded="false" aria-controls="replays">Replays</button>
         <button class="button" type="button" id="algorithms-toggle" aria-expanded="false" aria-controls="algorithms">Algorithms</button>
         <button class="button" type="button" id="state-toggle" aria-expanded="false" aria-controls="state-tools">State</button>
+        <button class="button" type="button" id="progress-toggle" aria-expanded="false" aria-controls="progress">Progress</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -78,6 +79,14 @@
         <label class="state-input-label" for="state-input">Paste an exported state</label>
         <textarea id="state-input" rows="4" spellcheck="false" placeholder="Paste version 1 cube state JSON"></textarea>
         <div class="state-actions"><button class="button-primary" type="button" id="state-import">Import state</button><button type="button" id="state-reset">Reset solved</button></div>
+      </section>
+
+      <section class="progress-panel" id="progress" hidden aria-labelledby="progress-title">
+        <div class="progress-heading"><div><p class="eyebrow">Your practice</p><h2 id="progress-title">Progress calendar</h2></div><button type="button" id="progress-close">Close</button></div>
+        <div class="progress-summary" id="progress-summary">Current streak: 0 days · Longest streak: 0 days</div>
+        <label class="progress-month" for="progress-month-input">Month<input type="month" id="progress-month-input"></label>
+        <div class="calendar-week" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
+        <div class="progress-calendar" id="progress-calendar" role="grid" aria-label="Progress calendar"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">
