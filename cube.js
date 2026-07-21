@@ -50,6 +50,44 @@
   const inverse = move => move.endsWith("'") ? move[0] : `${move}'`;
   const wait = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
 
+  function createSeededRandom(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (value * 1664525 + 1013904223) >>> 0;
+      return value / 4294967296;
+    };
+  }
+
+  function getLocalDateKey(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function hashDateKey(dateKey) {
+    let hash = 2166136261;
+    for (const character of dateKey) {
+      hash ^= character.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    }
+    return hash >>> 0;
+  }
+
+  function dailyScrambleMoves(date = new Date(), length = 24) {
+    const random = createSeededRandom(hashDateKey(getLocalDateKey(date)));
+    const names = Object.keys(faces);
+    const moves = [];
+    while (moves.length < length) {
+      const face = names[Math.floor(random() * names.length)];
+      if (!moves.length || moves[moves.length - 1][0] !== face) {
+        const suffix = random() < 1 / 3 ? '2' : random() < .5 ? "'" : '';
+        moves.push(`${face}${suffix}`);
+      }
+    }
+    return moves;
+  }
+
   function rotateVector(vector, axis) {
     const perpendicular = cross(axis, vector);
     const parallel = dot(vector, axis);
@@ -206,4 +244,9 @@
   viewport.addEventListener('pointercancel', releasePointer);
 
   initialize();
+
+  window.RubiksCubeChallenge = Object.freeze({
+    getLocalDateKey,
+    dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
+  });
 })();
