@@ -52,6 +52,7 @@
   const speedrunStorageKey = 'rubiks-cube.speedrun.v1';
   const themeStorageKey = 'rubiks-cube.theme.v1';
   const missionStorageKey = 'rubiks-cube.missions.v1';
+  const replayVersion = 1;
   let stickers = [];
   let history = [];
   let busy = false;
@@ -117,6 +118,28 @@
 
   const inverse = move => move.endsWith('2') ? move : move.endsWith("'") ? move[0] : `${move}'`;
   const wait = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
+
+  function createReplay(moves, timesMs = [], metadata = {}) {
+    if (!Array.isArray(moves) || !moves.every(move => /^[FBRLUD](?:2|')?$/.test(move))) throw new Error('Replay contains an invalid move.');
+    if (!Array.isArray(timesMs) || timesMs.length !== moves.length || !timesMs.every(time => Number.isFinite(time) && time >= 0)) throw new Error('Replay contains invalid timing data.');
+    return {
+      version: replayVersion,
+      moves: moves.slice(),
+      timesMs: timesMs.slice(),
+      metadata: {
+        name: typeof metadata.name === 'string' ? metadata.name.slice(0, 80) : 'Untitled replay',
+        source: typeof metadata.source === 'string' ? metadata.source.slice(0, 40) : 'manual'
+      }
+    };
+  }
+
+  function isReplay(value) {
+    try {
+      return value && value.version === replayVersion && createReplay(value.moves, value.timesMs, value.metadata).moves.length === value.moves.length;
+    } catch (error) {
+      return false;
+    }
+  }
 
   function createSeededRandom(seed) {
     let value = seed >>> 0;
@@ -840,4 +863,5 @@
     getLocalDateKey,
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
+  window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, version: replayVersion });
 })();
