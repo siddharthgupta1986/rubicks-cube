@@ -81,6 +81,8 @@
   const twoPlayerStatus = document.getElementById('two-player-status');
   const twoPlayerTime = document.getElementById('two-player-time');
   const twoPlayerScore = document.getElementById('two-player-score');
+  const twoPlayerHistoryClear = document.getElementById('two-player-history-clear');
+  const twoPlayerHistoryList = document.getElementById('two-player-history');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -113,6 +115,7 @@
   const progressStorageKey = 'rubiks-cube.progress.v1';
   const achievementStorageKey = 'rubiks-cube.achievements.v1';
   const feedbackStorageKey = 'rubiks-cube.feedback.v1';
+  const twoPlayerHistoryStorageKey = 'rubiks-cube.two-player-history.v1';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -171,6 +174,7 @@
   let studioMoves = [];
   let twoPlayerState = { phase: 'idle', players: [{ name: 'Player 1', score: 0 }, { name: 'Player 2', score: 0 }], activeIndex: 0, startedAt: 0, moves: [0, 0], timesMs: [0, 0], winner: '' };
   let twoPlayerTimerId = 0;
+  let twoPlayerHistory = [];
   let tutorStep = 0;
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
@@ -1295,7 +1299,36 @@
     twoPlayerState.phase = 'complete';
     if (twoPlayerTimerId) window.clearInterval(twoPlayerTimerId);
     twoPlayerTimerId = 0;
+    recordTwoPlayerMatch();
     return true;
+  }
+
+  function loadTwoPlayerHistory() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(twoPlayerHistoryStorageKey) || '[]');
+      return Array.isArray(stored) ? stored.filter(match => match && Array.isArray(match.players) && match.players.length === 2 && typeof match.winner === 'string').slice(-10) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveTwoPlayerHistory() {
+    try { window.localStorage.setItem(twoPlayerHistoryStorageKey, JSON.stringify(twoPlayerHistory.slice(-10))); } catch (error) { /* History remains available in memory. */ }
+  }
+
+  function recordTwoPlayerMatch() {
+    twoPlayerHistory = [...twoPlayerHistory, { players: twoPlayerState.players.map(player => ({ name: player.name, score: player.score })), winner: twoPlayerState.winner, timesMs: twoPlayerState.timesMs.slice(), createdAt: new Date().toISOString() }].slice(-10);
+    saveTwoPlayerHistory();
+    renderTwoPlayerHistory();
+  }
+
+  function renderTwoPlayerHistory() {
+    twoPlayerHistoryList.replaceChildren(...twoPlayerHistory.slice().reverse().map(match => {
+      const item = document.createElement('div');
+      item.className = 'two-player-history-item';
+      item.textContent = `${match.players[0].name} ${match.players[0].score} - ${match.players[1].name} ${match.players[1].score} - Winner: ${match.winner}`;
+      return item;
+    }));
   }
 
   function renderTwoPlayer() {
@@ -1741,6 +1774,12 @@
     renderTwoPlayer();
     status.textContent = 'Two-player round reset.';
   });
+  twoPlayerHistoryClear.addEventListener('click', () => {
+    twoPlayerHistory = [];
+    saveTwoPlayerHistory();
+    renderTwoPlayerHistory();
+    status.textContent = 'Two-player match history cleared.';
+  });
   feedbackSound.addEventListener('change', updateFeedbackPreferences);
   feedbackVibration.addEventListener('change', updateFeedbackPreferences);
   feedbackIntensity.addEventListener('change', updateFeedbackPreferences);
@@ -1770,6 +1809,8 @@
   renderAlgorithms();
   generateStudioScramble();
   renderTwoPlayer();
+  twoPlayerHistory = loadTwoPlayerHistory();
+  renderTwoPlayerHistory();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
