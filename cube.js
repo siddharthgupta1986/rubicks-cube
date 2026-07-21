@@ -29,6 +29,7 @@
   const controls = document.getElementById('turn-controls');
   const status = document.getElementById('status');
   const tutorToggle = document.getElementById('tutor-toggle');
+  const themeSelect = document.getElementById('theme-select');
   const tutor = document.getElementById('tutor');
   const tutorTitle = document.getElementById('tutor-title');
   const tutorGoal = document.getElementById('tutor-goal');
@@ -44,6 +45,7 @@
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
   const speedrunStorageKey = 'rubiks-cube.speedrun.v1';
+  const themeStorageKey = 'rubiks-cube.theme.v1';
   let stickers = [];
   let history = [];
   let busy = false;
@@ -145,6 +147,26 @@
       return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
     } catch (error) {
       return {};
+    }
+  }
+
+  function setTheme(theme) {
+    const allowedThemes = ['classic', 'neon', 'pastel', 'high-contrast'];
+    const selectedTheme = allowedThemes.includes(theme) ? theme : 'classic';
+    document.body.dataset.theme = selectedTheme;
+    themeSelect.value = selectedTheme;
+    try {
+      window.localStorage.setItem(themeStorageKey, selectedTheme);
+    } catch (error) {
+      // Private browsing modes can deny storage; the selected theme still applies.
+    }
+  }
+
+  function loadTheme() {
+    try {
+      return window.localStorage.getItem(themeStorageKey) || 'classic';
+    } catch (error) {
+      return 'classic';
     }
   }
 
@@ -601,6 +623,10 @@
     renderSpeedrunStats();
     status.textContent = 'Speedrun history cleared.';
   });
+  themeSelect.addEventListener('change', event => {
+    setTheme(event.target.value);
+    status.textContent = `${themeSelect.options[themeSelect.selectedIndex].text} theme selected.`;
+  });
 
   solveButton.addEventListener('click', async () => {
     if (busy || !history.length) return;
@@ -672,6 +698,7 @@
   dailyResults = loadDailyResults();
   speedrunRecords = loadSpeedrunRecords();
   renderSpeedrunStats();
+  setTheme(loadTheme());
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
