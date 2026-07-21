@@ -51,6 +51,7 @@
   const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
   const speedrunStorageKey = 'rubiks-cube.speedrun.v1';
   const themeStorageKey = 'rubiks-cube.theme.v1';
+  const missionStorageKey = 'rubiks-cube.missions.v1';
   let stickers = [];
   let history = [];
   let busy = false;
@@ -70,6 +71,8 @@
   let speedrunRecords = [];
   let celebrationTimeout = 0;
   let activeMission = null;
+  let missionPreparing = false;
+  let missionProgress = {};
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -188,6 +191,23 @@
       return Array.isArray(stored) ? stored.filter(record => record && Number.isFinite(record.timeMs) && Number.isFinite(record.moves)) : [];
     } catch (error) {
       return [];
+    }
+  }
+
+  function loadMissionProgress() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(missionStorageKey) || '{}');
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveMissionProgress() {
+    try {
+      window.localStorage.setItem(missionStorageKey, JSON.stringify(missionProgress));
+    } catch (error) {
+      // Private browsing modes can deny storage; the current mission still works in memory.
     }
   }
 
@@ -391,11 +411,12 @@
       description.textContent = mission.goal;
       const meta = document.createElement('div');
       meta.className = 'mission-meta';
-      meta.textContent = `${mission.difficulty} · Reward: ${mission.reward}`;
+      const progress = missionProgress[mission.id];
+      meta.textContent = `${mission.difficulty} · Reward: ${mission.reward}${progress?.completed ? ' · Completed' : ''}`;
       const button = document.createElement('button');
       button.type = 'button';
       button.dataset.mission = mission.id;
-      button.textContent = activeMission === mission.id ? 'Retry mission' : 'Start mission';
+      button.textContent = activeMission === mission.id ? 'Retry mission' : progress?.completed ? 'Replay mission' : 'Start mission';
       card.append(title, description, meta, button);
       return card;
     }));
@@ -411,8 +432,27 @@
     history = [];
     status.textContent = `Setting up ${mission.title}…`;
     renderMissions();
+    missionPreparing = true;
     await runSequence(mission.setup, true);
+    missionPreparing = false;
     status.textContent = `${mission.title} started. ${mission.goal}`;
+  }
+
+  function checkActiveMission() {
+    if (!activeMission || missionPreparing) return;
+    const mission = missionData.find(item => item.id === activeMission);
+    if (!mission || !guidedChecks[mission.success]()) return;
+    const previous = missionProgress[mission.id];
+    const moves = history.length;
+    missionProgress[mission.id] = {
+      completed: true,
+      completedAt: new Date().toISOString(),
+      bestMoves: previous?.bestMoves ? Math.min(previous.bestMoves, moves) : moves
+    };
+    saveMissionProgress();
+    renderMissions();
+    status.textContent = `Mission complete: ${mission.title}.`;
+    celebrateSolved();
   }
 
   async function copyDailyResult() {
@@ -579,6 +619,7 @@
       speedrunMoves.textContent = `Moves: ${speedrunMoveCount}`;
     }
     render();
+    if (record) checkActiveMission();
   }
 
   function updateView() {
@@ -723,6 +764,7 @@
     solveButton.disabled = true;
     status.textContent = 'Solved — every face is back in place.';
     celebrateSolved();
+    checkActiveMission();
   });
   dailyShareButton.addEventListener('click', copyDailyResult);
 
@@ -782,6 +824,7 @@
   speedrunRecords = loadSpeedrunRecords();
   renderSpeedrunStats();
   setTheme(loadTheme());
+  missionProgress = loadMissionProgress();
   renderMissions();
 
   window.RubiksCubeChallenge = Object.freeze({
