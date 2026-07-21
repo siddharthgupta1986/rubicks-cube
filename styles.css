@@ -33,6 +33,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .daily-result p:not(.eyebrow) { margin: 8px 0 12px; color: var(--muted); line-height: 1.45; }
 .speedrun { margin-top: 18px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255,255,255,.05); }
 .speedrun-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }.speedrun .eyebrow { margin-bottom: 5px; }.speedrun h2 { margin: 0; font-size: 1.05rem; }.speedrun-time { margin: 0; color: #c8e8ff; font: 700 1.45rem ui-monospace, SFMono-Regular, Menlo, monospace; }.speedrun-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.speedrun-moves { margin: 7px 0 0; color: var(--muted); font-size: .86rem; }
 .inspection-option { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--muted); font-size: .86rem; }
 .tutor { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--line); }
 .tutor-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; }
