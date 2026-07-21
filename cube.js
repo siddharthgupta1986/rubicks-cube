@@ -60,6 +60,10 @@
   const achievementsClose = document.getElementById('achievements-close');
   const achievementsReset = document.getElementById('achievements-reset');
   const cameraStatus = document.getElementById('camera-status');
+  const feedbackSound = document.getElementById('feedback-sound');
+  const feedbackVibration = document.getElementById('feedback-vibration');
+  const feedbackIntensity = document.getElementById('feedback-intensity');
+  const feedbackStatus = document.getElementById('feedback-status');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -448,6 +452,27 @@
     } catch (error) {
       // Private browsing modes can deny storage; feedback still follows the current session.
     }
+  }
+
+  function renderFeedbackSettings() {
+    const capabilities = feedbackCapabilities();
+    feedbackSound.checked = feedbackPreferences.sound;
+    feedbackSound.disabled = !capabilities.sound;
+    feedbackVibration.checked = feedbackPreferences.vibration;
+    feedbackVibration.disabled = !capabilities.vibration;
+    feedbackIntensity.value = feedbackPreferences.intensity;
+    feedbackStatus.textContent = [
+      capabilities.sound ? 'Sound available.' : 'Sound unavailable in this browser.',
+      capabilities.vibration ? 'Vibration available.' : 'Vibration unavailable on this device.',
+      capabilities.reducedMotion ? 'Reduced motion is on; vibration starts off.' : ''
+    ].filter(Boolean).join(' ');
+  }
+
+  function updateFeedbackPreferences() {
+    feedbackPreferences = { version: 1, sound: feedbackSound.checked, vibration: feedbackVibration.checked, intensity: feedbackIntensity.value };
+    saveFeedbackPreferences();
+    renderFeedbackSettings();
+    status.textContent = 'Feedback settings saved.';
   }
 
   function evaluateAchievements() {
@@ -1547,6 +1572,9 @@
   }
   viewport.addEventListener('pointerup', releasePointer);
   viewport.addEventListener('pointercancel', releasePointer);
+  feedbackSound.addEventListener('change', updateFeedbackPreferences);
+  feedbackVibration.addEventListener('change', updateFeedbackPreferences);
+  feedbackIntensity.addEventListener('change', updateFeedbackPreferences);
   document.querySelectorAll('[data-camera-preset]').forEach(button => {
     button.addEventListener('click', () => {
       const preset = cameraPresets[button.dataset.cameraPreset];
@@ -1566,6 +1594,7 @@
   progressEvents = loadProgressEvents();
   achievementState = loadAchievementState();
   feedbackPreferences = loadFeedbackPreferences();
+  renderFeedbackSettings();
   renderMissions();
   replayRecords = loadReplayRecords();
   renderReplays();
