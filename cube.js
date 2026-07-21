@@ -145,6 +145,8 @@
   let progressEvents = [];
   let achievementState = {};
   let feedbackPreferences = {};
+  let audioContext = null;
+  let lastVibrationAt = 0;
   let gamepadTimerId = 0;
   let gamepadButtons = [];
   let rotation = { x: -28, y: 36 };
@@ -473,6 +475,35 @@
     saveFeedbackPreferences();
     renderFeedbackSettings();
     status.textContent = 'Feedback settings saved.';
+  }
+
+  function feedbackScale() {
+    return feedbackPreferences.intensity === 'low' ? .55 : feedbackPreferences.intensity === 'high' ? 1.35 : 1;
+  }
+
+  function triggerFeedback(kind = 'turn') {
+    const scale = feedbackScale();
+    if (feedbackPreferences.sound && feedbackCapabilities().sound) {
+      try {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        audioContext ||= new AudioCtor();
+        if (audioContext.state === 'suspended') audioContext.resume();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.frequency.value = kind === 'solved' ? 660 : 210;
+        gain.gain.setValueAtTime(.035 * scale, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + (kind === 'solved' ? .22 : .06));
+        oscillator.connect(gain).connect(audioContext.destination);
+        oscillator.start();
+        oscillator.stop(audioContext.currentTime + (kind === 'solved' ? .22 : .06));
+      } catch (error) {
+        // Audio is decorative; a blocked or unavailable context must not affect play.
+      }
+    }
+    if (feedbackPreferences.vibration && feedbackCapabilities().vibration && Date.now() - lastVibrationAt >= 70) {
+      lastVibrationAt = Date.now();
+      navigator.vibrate(kind === 'solved' ? [45, 35, 90] : Math.max(10, Math.round(18 * scale)));
+    }
   }
 
   function evaluateAchievements() {
@@ -849,6 +880,7 @@
   }
 
   function celebrateSolved() {
+    triggerFeedback('solved');
     celebration.hidden = false;
     if (celebrationTimeout) window.clearTimeout(celebrationTimeout);
     celebrationTimeout = window.setTimeout(hideCelebration, 4200);
@@ -1107,6 +1139,7 @@
       speedrunMoves.textContent = `Moves: ${speedrunMoveCount}`;
     }
     render();
+    triggerFeedback('turn');
     if (record) checkActiveMission();
   }
 
