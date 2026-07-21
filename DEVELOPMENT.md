@@ -39,5 +39,6 @@
 - Shuffle → Solve restores the exact solved state.
 - Open Missions, start a card, use a manual turn and Solve, then switch to Shuffle, Guided solve, and Speedrun; mission status must not leak into those workflows.
 - State format fixture checks: export a solved state, make turns and export again, import both successfully, and reject malformed JSON, wrong versions, duplicate stickers, invalid colors, and incorrect color counts without changing the cube.
+- Input compatibility checks: use lowercase and uppercase keyboard turns, undo, focused form controls, Shuffle, Solve, Guided solve, Missions, Speedrun, and a connected/disconnected gamepad where available.
 - The HTML parser and JavaScript syntax checks pass.
 - Documentation is updated if the public behavior or file layout changes.

@@ -51,6 +51,10 @@
   const progressSummary = document.getElementById('progress-summary');
   const progressMonthInput = document.getElementById('progress-month-input');
   const progressCalendar = document.getElementById('progress-calendar');
+  const inputToggle = document.getElementById('input-toggle');
+  const inputHelp = document.getElementById('input-help');
+  const inputClose = document.getElementById('input-close');
+  const inputHelpList = document.getElementById('input-help-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -1255,6 +1259,49 @@
     status.textContent = 'Progress history cleared.';
   });
   progressMonthInput.addEventListener('change', renderProgress);
+  function renderInputHelp() {
+    inputHelpList.replaceChildren();
+    Object.entries(keyboardShortcuts).forEach(([key, move]) => {
+      const row = document.createElement('div');
+      row.className = 'input-help-row';
+      const keyLabel = document.createElement('span');
+      keyLabel.className = 'input-key';
+      keyLabel.textContent = key;
+      const moveLabel = document.createElement('span');
+      moveLabel.textContent = `${move} turn`;
+      row.append(keyLabel, moveLabel);
+      inputHelpList.append(row);
+    });
+    const undo = document.createElement('div');
+    undo.className = 'input-help-row';
+    const undoKey = document.createElement('span');
+    undoKey.className = 'input-key';
+    undoKey.textContent = 'Ctrl/Cmd + Z';
+    const undoLabel = document.createElement('span');
+    undoLabel.textContent = 'Undo last move';
+    undo.append(undoKey, undoLabel);
+    inputHelpList.append(undo);
+    const gamepad = document.createElement('div');
+    gamepad.className = 'input-help-row';
+    const gamepadKey = document.createElement('span');
+    gamepadKey.className = 'input-key';
+    gamepadKey.textContent = 'Gamepad A/B/X/Y';
+    const gamepadLabel = document.createElement('span');
+    gamepadLabel.textContent = "R/U/R'/U' turns";
+    gamepad.append(gamepadKey, gamepadLabel);
+    inputHelpList.append(gamepad);
+  }
+  inputToggle.addEventListener('click', () => {
+    inputHelp.hidden = false;
+    inputToggle.setAttribute('aria-expanded', 'true');
+    renderInputHelp();
+    status.textContent = 'Input help opened.';
+  });
+  inputClose.addEventListener('click', () => {
+    inputHelp.hidden = true;
+    inputToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Input help closed.';
+  });
   algorithmList.addEventListener('click', async event => {
     const button = event.target.closest('button[data-algorithm]');
     if (!button || busy) return;
