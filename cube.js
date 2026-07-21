@@ -1245,7 +1245,7 @@
       const suffix = scrambleDoubles.checked ? ['', "'", '2'][Math.floor(random() * 3)] : random() < .5 ? '' : "'";
       studioMoves.push(`${face}${suffix}`);
     }
-    scramblePreview.replaceChildren(...studioMoves.map(move => { const chip = document.createElement('span'); chip.className = 'move-chip'; chip.textContent = move; return chip; }));
+    scramblePreview.replaceChildren(...studioMoves.map(move => { const chip = document.createElement('span'); chip.className = 'move-chip'; chip.setAttribute('role', 'listitem'); chip.textContent = move; return chip; }));
     status.textContent = `Generated ${studioMoves.length}-move scramble preview.`;
   }
 

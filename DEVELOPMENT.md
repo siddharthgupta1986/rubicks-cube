@@ -43,5 +43,6 @@
 - Camera compatibility checks: apply every preset, drag afterward, use arrow keys, inspect all six faces, switch themes, and verify a 320px viewport has no clipping or horizontal scroll.
 - Camera presets must never change sticker serialization or move history; compare exported state before and after each view action.
 - Feedback compatibility checks: toggle vibration on supported and unsupported devices, verify reduced-motion defaults it off, and confirm rapid sequences do not issue vibration calls more often than the throttle allows.
+- Scramble studio checks: changing constraints only changes the preview; malformed lengths are clamped, generated moves never repeat a face consecutively, and Apply is the only action that changes stickers or history.
 - The HTML parser and JavaScript syntax checks pass.
 - Documentation is updated if the public behavior or file layout changes.
