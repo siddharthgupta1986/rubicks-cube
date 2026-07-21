@@ -91,6 +91,7 @@
   const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
   const progressStorageKey = 'rubiks-cube.progress.v1';
   const achievementStorageKey = 'rubiks-cube.achievements.v1';
+  const feedbackStorageKey = 'rubiks-cube.feedback.v1';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -139,6 +140,7 @@
   let algorithmProgress = {};
   let progressEvents = [];
   let achievementState = {};
+  let feedbackPreferences = {};
   let gamepadTimerId = 0;
   let gamepadButtons = [];
   let rotation = { x: -28, y: 36 };
@@ -417,6 +419,34 @@
       window.localStorage.setItem(achievementStorageKey, JSON.stringify({ version: 1, unlocks: achievementState }));
     } catch (error) {
       // Private browsing modes can deny storage; unlocks remain available in memory.
+    }
+  }
+
+  function feedbackCapabilities() {
+    return {
+      sound: typeof window.AudioContext === 'function' || typeof window.webkitAudioContext === 'function',
+      vibration: typeof navigator.vibrate === 'function',
+      reducedMotion: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+    };
+  }
+
+  function loadFeedbackPreferences() {
+    const capabilities = feedbackCapabilities();
+    const defaults = { version: 1, sound: capabilities.sound, vibration: capabilities.vibration && !capabilities.reducedMotion, intensity: 'normal' };
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(feedbackStorageKey) || '{}');
+      if (!stored || stored.version !== 1) return defaults;
+      return { ...defaults, sound: stored.sound !== false && capabilities.sound, vibration: stored.vibration === true && capabilities.vibration, intensity: ['low', 'normal', 'high'].includes(stored.intensity) ? stored.intensity : 'normal' };
+    } catch (error) {
+      return defaults;
+    }
+  }
+
+  function saveFeedbackPreferences() {
+    try {
+      window.localStorage.setItem(feedbackStorageKey, JSON.stringify(feedbackPreferences));
+    } catch (error) {
+      // Private browsing modes can deny storage; feedback still follows the current session.
     }
   }
 
@@ -1535,6 +1565,7 @@
   missionProgress = loadMissionProgress();
   progressEvents = loadProgressEvents();
   achievementState = loadAchievementState();
+  feedbackPreferences = loadFeedbackPreferences();
   renderMissions();
   replayRecords = loadReplayRecords();
   renderReplays();
@@ -1550,5 +1581,6 @@
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
+  window.RubiksCubeFeedback = Object.freeze({ capabilities: feedbackCapabilities, preferences: () => ({ ...feedbackPreferences }), save: saveFeedbackPreferences });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
