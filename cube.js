@@ -25,6 +25,7 @@
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
+  const celebration = document.getElementById('celebration');
   const solveButton = document.getElementById('solve');
   const controls = document.getElementById('turn-controls');
   const status = document.getElementById('status');
@@ -63,6 +64,7 @@
   let speedrunMoveCount = 0;
   let speedrunSetup = false;
   let speedrunRecords = [];
+  let celebrationTimeout = 0;
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -296,6 +298,7 @@
     setSpeedrunState('completed');
     speedrunTime.textContent = formatSpeedrunTime(elapsed);
     status.textContent = `Speedrun complete in ${formatSpeedrunTime(elapsed)} with ${speedrunMoveCount} moves.`;
+    celebrateSolved();
   }
 
   function beginInspection() {
@@ -342,6 +345,7 @@
     speedrunSetup = false;
     speedrunTime.textContent = '0:00.00';
     status.textContent = 'Speedrun timer reset.';
+    hideCelebration();
   }
 
   function renderDailyResult(dateKey) {
@@ -353,6 +357,18 @@
     const bestLabel = result.best === result.timeMs ? ' New best!' : '';
     dailyResultSummary.textContent = `${dateKey}: ${formatDuration(result.timeMs)} in ${result.moves} moves.${bestLabel}`;
     dailyResult.hidden = false;
+  }
+
+  function hideCelebration() {
+    celebration.hidden = true;
+    if (celebrationTimeout) window.clearTimeout(celebrationTimeout);
+    celebrationTimeout = 0;
+  }
+
+  function celebrateSolved() {
+    celebration.hidden = false;
+    if (celebrationTimeout) window.clearTimeout(celebrationTimeout);
+    celebrationTimeout = window.setTimeout(hideCelebration, 4200);
   }
 
   async function copyDailyResult() {
@@ -594,6 +610,7 @@
     dailyChallengePreparing = false;
     dailyChallengeDateKey = '';
     history = [];
+    hideCelebration();
     initialize();
     status.textContent = 'Shuffling…';
     await runSequence(shuffleMoves(), true);
@@ -604,6 +621,7 @@
     if (busy) return;
     initialize();
     history = [];
+    hideCelebration();
     const dateKey = getLocalDateKey();
     dailyResult.hidden = true;
     status.textContent = `Starting the ${dateKey} daily challenge…`;
@@ -645,6 +663,7 @@
     updateCubeLabel();
     solveButton.disabled = true;
     status.textContent = 'Solved — every face is back in place.';
+    celebrateSolved();
   });
   dailyShareButton.addEventListener('click', copyDailyResult);
 
