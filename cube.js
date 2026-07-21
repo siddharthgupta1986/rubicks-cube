@@ -160,6 +160,7 @@
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let studioMoves = [];
+  let twoPlayerState = { phase: 'idle', players: [{ name: 'Player 1', score: 0 }, { name: 'Player 2', score: 0 }], activeIndex: 0, startedAt: 0, moves: [0, 0], timesMs: [0, 0], winner: '' };
   let tutorStep = 0;
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
@@ -1249,6 +1250,33 @@
     status.textContent = `Generated ${studioMoves.length}-move scramble preview.`;
   }
 
+  function resetTwoPlayerState() {
+    twoPlayerState = { phase: 'idle', players: [{ name: 'Player 1', score: 0 }, { name: 'Player 2', score: 0 }], activeIndex: 0, startedAt: 0, moves: [0, 0], timesMs: [0, 0], winner: '' };
+  }
+
+  function startTwoPlayerRound(names = ['Player 1', 'Player 2']) {
+    const cleanNames = names.map((name, index) => String(name || '').trim().slice(0, 24) || `Player ${index + 1}`);
+    twoPlayerState = { phase: 'playing', players: cleanNames.map(name => ({ name, score: 0 })), activeIndex: 0, startedAt: performance.now(), moves: [0, 0], timesMs: [0, 0], winner: '' };
+    return { ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })) };
+  }
+
+  function advanceTwoPlayerTurn() {
+    if (twoPlayerState.phase !== 'playing') return false;
+    twoPlayerState.timesMs[twoPlayerState.activeIndex] += performance.now() - twoPlayerState.startedAt;
+    twoPlayerState.activeIndex = twoPlayerState.activeIndex === 0 ? 1 : 0;
+    twoPlayerState.startedAt = performance.now();
+    return true;
+  }
+
+  function finishTwoPlayerRound(winnerIndex = twoPlayerState.activeIndex) {
+    if (twoPlayerState.phase !== 'playing') return false;
+    twoPlayerState.timesMs[twoPlayerState.activeIndex] += performance.now() - twoPlayerState.startedAt;
+    twoPlayerState.players[winnerIndex].score += 1;
+    twoPlayerState.winner = twoPlayerState.players[winnerIndex].name;
+    twoPlayerState.phase = 'complete';
+    return true;
+  }
+
   controls.addEventListener('click', event => {
     const button = event.target.closest('button[data-move]');
     if (!button || busy) return;
@@ -1694,5 +1722,6 @@
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
   window.RubiksCubeFeedback = Object.freeze({ capabilities: feedbackCapabilities, preferences: () => ({ ...feedbackPreferences }), save: saveFeedbackPreferences });
+  window.RubiksCubeTwoPlayer = Object.freeze({ state: () => ({ ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })), moves: twoPlayerState.moves.slice(), timesMs: twoPlayerState.timesMs.slice() }), start: startTwoPlayerRound, next: advanceTwoPlayerTurn, finish: finishTwoPlayerRound, reset: resetTwoPlayerState });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
