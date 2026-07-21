@@ -59,6 +59,7 @@
   const achievements = document.getElementById('achievements');
   const achievementsClose = document.getElementById('achievements-close');
   const achievementsReset = document.getElementById('achievements-reset');
+  const cameraStatus = document.getElementById('camera-status');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -1504,6 +1505,14 @@
   }
   viewport.addEventListener('pointerup', releasePointer);
   viewport.addEventListener('pointercancel', releasePointer);
+  document.querySelectorAll('[data-camera-preset]').forEach(button => {
+    button.addEventListener('click', () => {
+      const preset = cameraPresets[button.dataset.cameraPreset];
+      if (!applyCameraPreset(button.dataset.cameraPreset) || !preset) return;
+      cameraStatus.textContent = `${preset.label} active.`;
+      status.textContent = `${preset.label} applied. Puzzle state unchanged.`;
+    });
+  });
 
   initialize();
   dailyResults = loadDailyResults();

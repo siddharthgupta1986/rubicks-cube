@@ -23,6 +23,7 @@ h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1; letter-spa
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .actions button { flex: 1 1 auto; }
 .theme-control { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: var(--muted); font-size: .86rem; }.theme-control select { min-height: 36px; border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; color: var(--ink); background: rgba(255,255,255,.08); font: inherit; }
+.camera-tools { margin-top: 14px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; background: rgba(255,255,255,.04); }.camera-tools h2 { margin: 0; font-size: .98rem; }.camera-tools .eyebrow { margin-bottom: 5px; }.camera-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }.camera-status { margin: 8px 0 0; color: var(--muted); font-size: .78rem; }
 button { min-height: 40px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; padding: 0 15px; color: var(--ink); background: rgba(255,255,255,.08); font: inherit; font-weight: 700; cursor: pointer; transition: transform .16s ease, border-color .16s ease, background .16s ease; }
 button:hover:not(:disabled) { transform: translateY(-1px); border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.15); }
 button:focus-visible, select:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
