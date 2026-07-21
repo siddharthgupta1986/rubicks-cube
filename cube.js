@@ -227,6 +227,20 @@
     render();
   }
 
+  function isGuidedTarget(face, row, col) {
+    if (tutor.hidden) return false;
+    const success = lessons[tutorStep].success;
+    const edge = (row === 1 && col !== 1) || (col === 1 && row !== 1);
+    const corner = row !== 1 && col !== 1;
+    if (success === 'whiteCross') return face === 'U' && edge;
+    if (success === 'firstLayer') return face === 'U';
+    if (success === 'middleLayer') return ['F', 'B', 'R', 'L'].includes(face) && row === 1;
+    if (success === 'yellowCross') return face === 'D' && edge;
+    if (success === 'yellowCornersPlaced' || success === 'yellowCornersOriented') return face === 'D' && corner;
+    if (success === 'solved') return true;
+    return false;
+  }
+
   function render() {
     const locations = new Map(stickers.map(sticker => [key(sticker.position, sticker.normal), sticker]));
     faceElements.forEach(element => {
@@ -235,7 +249,7 @@
       for (let row = 0; row < 3; row += 1) for (let col = 0; col < 3; col += 1) {
         const sticker = locations.get(key(definition.location(row, col), definition.n));
         const cell = document.createElement('span');
-        cell.className = `sticker ${sticker.color}`;
+        cell.className = `sticker ${sticker.color}${isGuidedTarget(element.dataset.face, row, col) ? ' guided-target' : ''}`;
         element.append(cell);
       }
     });
@@ -292,6 +306,7 @@
     tutorDemo.hidden = lesson.moves.length === 0;
     tutorPrevious.disabled = tutorStep === 0;
     tutorNext.textContent = tutorStep === lessons.length - 1 ? 'Start again' : 'Next step';
+    render();
   }
 
   function setBusy(value) {
