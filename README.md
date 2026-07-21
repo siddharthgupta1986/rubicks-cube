@@ -20,6 +20,7 @@ Then visit `http://127.0.0.1:4173`.
 - Clockwise and counter-clockwise turns for all six faces.
 - Legal randomized shuffles and deterministic reversal-based solving.
 - An eight-step beginner lesson, including common move algorithms and practice controls.
+- Local replay, algorithm, mission, and cube-state tools for saving, sharing, and practicing without a backend.
 - Responsive layout, keyboard-operable controls, and live status announcements.
 
 ## Project structure
