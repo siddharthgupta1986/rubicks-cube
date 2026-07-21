@@ -44,5 +44,6 @@
 - Camera presets must never change sticker serialization or move history; compare exported state before and after each view action.
 - Feedback compatibility checks: toggle vibration on supported and unsupported devices, verify reduced-motion defaults it off, and confirm rapid sequences do not issue vibration calls more often than the throttle allows.
 - Scramble studio checks: changing constraints only changes the preview; malformed lengths are clamped, generated moves never repeat a face consecutively, and Apply is the only action that changes stickers or history.
+- Custom scramble workflow checks: apply a studio scramble, Solve it, then use Daily challenge, Speedrun, Missions, Guided solve, State export/import, and keyboard turns; verify each workflow starts from its own state and malformed previews never partially apply.
 - The HTML parser and JavaScript syntax checks pass.
 - Documentation is updated if the public behavior or file layout changes.
