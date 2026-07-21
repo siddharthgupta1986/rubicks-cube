@@ -556,6 +556,7 @@
     });
     dailyChallengeActive = false;
     dailyChallengeDateKey = '';
+    recordProgressEvent('daily', dateKey);
   }
 
   function formatDuration(milliseconds) {
@@ -603,6 +604,7 @@
     const elapsed = performance.now() - speedrunStartedAt;
     stopSpeedrunTimer();
     recordSpeedrun();
+    recordProgressEvent('speedrun', getLocalDateKey());
     setSpeedrunState('completed');
     speedrunTime.textContent = formatSpeedrunTime(elapsed);
     status.textContent = `Speedrun complete in ${formatSpeedrunTime(elapsed)} with ${speedrunMoveCount} moves.`;
@@ -735,6 +737,7 @@
       bestMoves: previous?.bestMoves ? Math.min(previous.bestMoves, moves) : moves
     };
     saveMissionProgress();
+    recordProgressEvent('mission', mission.id);
     renderMissions();
     status.textContent = `Mission complete: ${mission.title}.`;
     celebrateSolved();
