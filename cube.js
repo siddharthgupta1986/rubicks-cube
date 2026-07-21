@@ -22,7 +22,9 @@
   const tutorToggle = document.getElementById('tutor-toggle');
   const tutor = document.getElementById('tutor');
   const tutorTitle = document.getElementById('tutor-title');
+  const tutorGoal = document.getElementById('tutor-goal');
   const tutorBody = document.getElementById('tutor-body');
+  const tutorOrientation = document.getElementById('tutor-orientation');
   const tutorTip = document.getElementById('tutor-tip');
   const tutorMoves = document.getElementById('tutor-moves');
   const tutorCount = document.getElementById('tutor-count');
@@ -275,8 +277,10 @@
   function renderTutor() {
     const lesson = lessons[tutorStep];
     tutorTitle.textContent = lesson.title;
+    tutorGoal.textContent = `Goal: ${lesson.goal}`;
     tutorBody.textContent = lesson.body;
-    tutorTip.textContent = lesson.tip;
+    tutorOrientation.textContent = `Orientation: ${lesson.orientation}`;
+    tutorTip.textContent = `Hints: ${lesson.hints.join(' ')}`;
     tutorCount.textContent = `${tutorStep + 1} of ${lessons.length}`;
     tutorMoves.replaceChildren(...lesson.moves.map(move => {
       const chip = document.createElement('span');
@@ -370,11 +374,24 @@
     const opening = tutor.hidden;
     tutor.hidden = !opening;
     tutorToggle.setAttribute('aria-expanded', String(opening));
-    tutorToggle.textContent = opening ? 'Close tutor' : 'Tutor mode';
-    if (opening) renderTutor();
+    tutorToggle.textContent = opening ? 'Close guided solve' : 'Guided solve';
+    if (opening) {
+      renderTutor();
+      status.textContent = 'Guided solve opened. Follow one goal at a time.';
+    }
   });
-  tutorPrevious.addEventListener('click', () => { if (tutorStep > 0) { tutorStep -= 1; renderTutor(); } });
-  tutorNext.addEventListener('click', () => { tutorStep = tutorStep === lessons.length - 1 ? 0 : tutorStep + 1; renderTutor(); });
+  tutorPrevious.addEventListener('click', () => {
+    if (tutorStep > 0) {
+      tutorStep -= 1;
+      renderTutor();
+      status.textContent = `Guided solve: ${lessons[tutorStep].title}.`;
+    }
+  });
+  tutorNext.addEventListener('click', () => {
+    tutorStep = tutorStep === lessons.length - 1 ? 0 : tutorStep + 1;
+    renderTutor();
+    status.textContent = `Guided solve: ${lessons[tutorStep].title}.`;
+  });
   tutorDemo.addEventListener('click', async () => {
     if (busy) return;
     const lesson = lessons[tutorStep];
