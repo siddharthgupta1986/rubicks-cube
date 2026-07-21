@@ -47,7 +47,16 @@
   const key = (p, n) => `${p.join(',')}|${n.join(',')}`;
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const inverse = move => move.endsWith("'") ? move[0] : `${move}'`;
+  function parseMove(move) {
+    const match = /^([FBRLUD])([2']?)$/.exec(move);
+    if (!match) throw new Error(`Invalid cube move: ${move}`);
+    return {
+      face: match[1],
+      rotations: match[2] === '2' ? 2 : match[2] === "'" ? 3 : 1
+    };
+  }
+
+  const inverse = move => move.endsWith('2') ? move : move.endsWith("'") ? move[0] : `${move}'`;
   const wait = milliseconds => new Promise(resolve => window.setTimeout(resolve, milliseconds));
 
   function rotateVector(vector, axis) {
@@ -81,8 +90,8 @@
   }
 
   function turn(move, record = true) {
-    const axis = faces[move[0]].n;
-    const rotations = move.endsWith("'") ? 3 : 1;
+    const { face, rotations } = parseMove(move);
+    const axis = faces[face].n;
     for (let pass = 0; pass < rotations; pass += 1) stickers.forEach(sticker => {
       if (dot(sticker.position, axis) === 1) {
         sticker.position = rotateVector(sticker.position, axis);
