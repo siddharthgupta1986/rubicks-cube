@@ -58,6 +58,7 @@
   const achievementsToggle = document.getElementById('achievements-toggle');
   const achievements = document.getElementById('achievements');
   const achievementsClose = document.getElementById('achievements-close');
+  const achievementsReset = document.getElementById('achievements-reset');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -396,7 +397,8 @@
   function loadAchievementState() {
     try {
       const stored = JSON.parse(window.localStorage.getItem(achievementStorageKey) || '{}');
-      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+      if (stored && stored.version === 1 && stored.unlocks && typeof stored.unlocks === 'object' && !Array.isArray(stored.unlocks)) return stored.unlocks;
+      return stored && typeof stored === 'object' && !Array.isArray(stored) && !('version' in stored) ? stored : {};
     } catch (error) {
       return {};
     }
@@ -404,7 +406,7 @@
 
   function saveAchievementState() {
     try {
-      window.localStorage.setItem(achievementStorageKey, JSON.stringify(achievementState));
+      window.localStorage.setItem(achievementStorageKey, JSON.stringify({ version: 1, unlocks: achievementState }));
     } catch (error) {
       // Private browsing modes can deny storage; unlocks remain available in memory.
     }
@@ -1382,6 +1384,22 @@
     achievements.hidden = true;
     achievementsToggle.setAttribute('aria-expanded', 'false');
     status.textContent = 'Achievements closed.';
+  });
+  achievementsReset.addEventListener('click', () => {
+    if (!window.confirm('Reset achievement progress and related practice history?')) return;
+    achievementState = {};
+    progressEvents = [];
+    algorithmProgress = {};
+    replayRecords = [];
+    saveAchievementState();
+    saveProgressEvents();
+    saveAlgorithmProgress();
+    saveReplayRecords();
+    renderAchievements();
+    renderProgress();
+    renderAlgorithms();
+    renderReplays();
+    status.textContent = 'Achievement progress reset.';
   });
   algorithmList.addEventListener('click', async event => {
     const button = event.target.closest('button[data-algorithm]');
