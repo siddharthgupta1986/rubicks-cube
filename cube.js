@@ -47,6 +47,7 @@
   const progressToggle = document.getElementById('progress-toggle');
   const progressPanel = document.getElementById('progress');
   const progressClose = document.getElementById('progress-close');
+  const progressClear = document.getElementById('progress-clear');
   const progressSummary = document.getElementById('progress-summary');
   const progressMonthInput = document.getElementById('progress-month-input');
   const progressCalendar = document.getElementById('progress-calendar');
@@ -1192,6 +1193,12 @@
     progressPanel.hidden = true;
     progressToggle.setAttribute('aria-expanded', 'false');
     status.textContent = 'Progress calendar closed.';
+  });
+  progressClear.addEventListener('click', () => {
+    progressEvents = [];
+    saveProgressEvents();
+    renderProgress();
+    status.textContent = 'Progress history cleared.';
   });
   progressMonthInput.addEventListener('change', renderProgress);
   algorithmList.addEventListener('click', async event => {
