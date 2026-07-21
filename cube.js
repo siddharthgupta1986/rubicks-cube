@@ -105,6 +105,13 @@
   ];
   const cubeStateVersion = 1;
   const replayVersion = 1;
+  const cameraPresets = Object.freeze({
+    solved: Object.freeze({ label: 'Solved view', x: -28, y: 36 }),
+    front: Object.freeze({ label: 'Front view', x: 0, y: 0 }),
+    top: Object.freeze({ label: 'Top view', x: -78, y: 0 }),
+    cross: Object.freeze({ label: 'Cross-training view', x: -20, y: -42 }),
+    reset: Object.freeze({ label: 'Reset view', x: -28, y: 36 })
+  });
   let stickers = [];
   let history = [];
   let busy = false;
@@ -1051,6 +1058,14 @@
     cube.style.transform = `rotateX(${rotation.x}deg) rotateY(${rotation.y}deg)`;
   }
 
+  function applyCameraPreset(id) {
+    const preset = cameraPresets[id];
+    if (!preset) return false;
+    rotation = { x: preset.x, y: preset.y };
+    updateView();
+    return true;
+  }
+
   function renderTutor() {
     const lesson = lessons[tutorStep];
     tutorTitle.textContent = lesson.title;
@@ -1510,6 +1525,7 @@
   });
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
   window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
+  window.RubiksCubeCamera = Object.freeze({ presets: () => Object.fromEntries(Object.entries(cameraPresets).map(([id, preset]) => [id, { ...preset }])), apply: applyCameraPreset });
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
