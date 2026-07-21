@@ -72,6 +72,14 @@
   const scrambleApply = document.getElementById('scramble-apply');
   const scrambleCopy = document.getElementById('scramble-copy');
   const scramblePreview = document.getElementById('scramble-preview');
+  const playerOneName = document.getElementById('player-one-name');
+  const playerTwoName = document.getElementById('player-two-name');
+  const twoPlayerStart = document.getElementById('two-player-start');
+  const twoPlayerNext = document.getElementById('two-player-next');
+  const twoPlayerEnd = document.getElementById('two-player-end');
+  const twoPlayerReset = document.getElementById('two-player-reset');
+  const twoPlayerStatus = document.getElementById('two-player-status');
+  const twoPlayerScore = document.getElementById('two-player-score');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -1148,6 +1156,7 @@
       speedrunMoveCount += 1;
       speedrunMoves.textContent = `Moves: ${speedrunMoveCount}`;
     }
+    if (record && twoPlayerState.phase === 'playing') twoPlayerState.moves[twoPlayerState.activeIndex] += 1;
     render();
     triggerFeedback('turn');
     if (record) checkActiveMission();
@@ -1275,6 +1284,20 @@
     twoPlayerState.winner = twoPlayerState.players[winnerIndex].name;
     twoPlayerState.phase = 'complete';
     return true;
+  }
+
+  function renderTwoPlayer() {
+    const active = twoPlayerState.phase === 'playing' ? twoPlayerState.players[twoPlayerState.activeIndex].name : '';
+    twoPlayerStatus.textContent = twoPlayerState.phase === 'idle' ? 'Ready for two players.' : twoPlayerState.phase === 'complete' ? `${twoPlayerState.winner} wins the round.` : `${active} is up. ${twoPlayerState.moves[twoPlayerState.activeIndex]} moves played.`;
+    twoPlayerScore.replaceChildren(...twoPlayerState.players.map((player, index) => {
+      const item = document.createElement('span');
+      item.className = `two-player-score-item${twoPlayerState.phase === 'playing' && index === twoPlayerState.activeIndex ? ' is-active' : ''}`;
+      item.textContent = `${player.name}: ${player.score}`;
+      return item;
+    }));
+    twoPlayerStart.disabled = twoPlayerState.phase === 'playing';
+    twoPlayerNext.disabled = twoPlayerState.phase !== 'playing';
+    twoPlayerEnd.disabled = twoPlayerState.phase !== 'playing';
   }
 
   controls.addEventListener('click', event => {
@@ -1682,6 +1705,28 @@
       status.textContent = 'Could not copy notation. Select the preview to copy it.';
     }
   });
+  twoPlayerStart.addEventListener('click', () => {
+    history = [];
+    initialize();
+    startTwoPlayerRound([playerOneName.value, playerTwoName.value]);
+    renderTwoPlayer();
+    status.textContent = `${twoPlayerState.players[0].name} starts the round.`;
+  });
+  twoPlayerNext.addEventListener('click', () => {
+    if (!advanceTwoPlayerTurn()) return;
+    renderTwoPlayer();
+    status.textContent = `${twoPlayerState.players[twoPlayerState.activeIndex].name}'s turn.`;
+  });
+  twoPlayerEnd.addEventListener('click', () => {
+    if (!finishTwoPlayerRound()) return;
+    renderTwoPlayer();
+    status.textContent = `${twoPlayerState.winner} wins the round.`;
+  });
+  twoPlayerReset.addEventListener('click', () => {
+    resetTwoPlayerState();
+    renderTwoPlayer();
+    status.textContent = 'Two-player round reset.';
+  });
   feedbackSound.addEventListener('change', updateFeedbackPreferences);
   feedbackVibration.addEventListener('change', updateFeedbackPreferences);
   feedbackIntensity.addEventListener('change', updateFeedbackPreferences);
@@ -1710,6 +1755,7 @@
   renderReplays();
   renderAlgorithms();
   generateStudioScramble();
+  renderTwoPlayer();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
