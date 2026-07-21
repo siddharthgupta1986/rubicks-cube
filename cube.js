@@ -72,6 +72,7 @@
   const missionStorageKey = 'rubiks-cube.missions.v1';
   const replayStorageKey = 'rubiks-cube.replays.v1';
   const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
+  const progressStorageKey = 'rubiks-cube.progress.v1';
   const cubeStateVersion = 1;
   const replayVersion = 1;
   let stickers = [];
@@ -98,6 +99,7 @@
   let replayRecords = [];
   let selectedAlgorithmCategory = 'all';
   let algorithmProgress = {};
+  let progressEvents = [];
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -340,6 +342,32 @@
     } catch (error) {
       // Private browsing modes can deny storage; the current practice still works in memory.
     }
+  }
+
+  function loadProgressEvents() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(progressStorageKey) || '[]');
+      return Array.isArray(stored) ? stored.filter(event => event && typeof event.date === 'string' && typeof event.type === 'string' && typeof event.id === 'string') : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveProgressEvents() {
+    try {
+      window.localStorage.setItem(progressStorageKey, JSON.stringify(progressEvents.slice(-500)));
+    } catch (error) {
+      // Private browsing modes can deny storage; progress remains available in memory.
+    }
+  }
+
+  function recordProgressEvent(type, id, date = getLocalDateKey()) {
+    if (typeof type !== 'string' || typeof id !== 'string') return false;
+    const duplicate = progressEvents.some(event => event.type === type && event.id === id && event.date === date);
+    if (duplicate) return false;
+    progressEvents.push({ type, id, date });
+    saveProgressEvents();
+    return true;
   }
 
   function loadReplayRecords() {
@@ -1201,6 +1229,7 @@
   setTheme(loadTheme());
   algorithmProgress = loadAlgorithmProgress();
   missionProgress = loadMissionProgress();
+  progressEvents = loadProgressEvents();
   renderMissions();
   replayRecords = loadReplayRecords();
   renderReplays();
@@ -1212,5 +1241,6 @@
   });
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
   window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
+  window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
