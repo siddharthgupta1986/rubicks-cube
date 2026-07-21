@@ -12,6 +12,7 @@
   const cube = document.getElementById('cube');
   const viewport = document.getElementById('cube-viewport');
   const shuffleButton = document.getElementById('shuffle');
+  const dailyChallengeButton = document.getElementById('daily-challenge');
   const solveButton = document.getElementById('solve');
   const controls = document.getElementById('turn-controls');
   const status = document.getElementById('status');
@@ -171,6 +172,7 @@
   function setBusy(value) {
     busy = value;
     shuffleButton.disabled = value;
+    dailyChallengeButton.disabled = value;
     solveButton.disabled = value || history.length === 0;
     controls.disabled = value;
   }
@@ -209,6 +211,16 @@
     status.textContent = 'Shuffling…';
     await runSequence(shuffleMoves(), true);
     status.textContent = 'Shuffled. Drag to inspect it or make a face turn.';
+  });
+
+  dailyChallengeButton.addEventListener('click', async () => {
+    if (busy) return;
+    initialize();
+    history = [];
+    const dateKey = getLocalDateKey();
+    status.textContent = `Starting the ${dateKey} daily challenge…`;
+    await runSequence(dailyScrambleMoves(), true);
+    status.textContent = `Daily challenge ready for ${dateKey}. Solve it at your own pace.`;
   });
 
   solveButton.addEventListener('click', async () => {
