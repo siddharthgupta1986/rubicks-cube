@@ -110,6 +110,13 @@
     { id: 'yellow-cross', title: 'Yellow cross', goal: 'Make a yellow cross on the top face.', setup: ['F', 'R', 'U', "R'", "U'", "F'"], success: 'yellowCross', reward: 'Last-layer ready', difficulty: 'Medium' },
     { id: 'solve-from-scramble', title: 'Full solve finish', goal: 'Return the cube to six solid-color faces.', setup: ['R', 'U', "R'", "U'", 'F', 'R', "F'", "U'"], success: 'solved', reward: 'Cube finisher', difficulty: 'Hard' }
   ];
+  const algorithmCatalog = [
+    { id: 'right-hand', title: 'Right-hand corner insert', category: 'Beginner', goal: 'Place a white corner from the bottom-right position.', orientation: 'Hold the target corner at front-right-bottom.', moves: ["R'", "D'", 'R', 'D'], difficulty: 'Easy', explanation: 'Repeat the four moves until the corner is oriented and placed.' },
+    { id: 'middle-right', title: 'Middle edge to the right', category: 'Beginner', goal: 'Insert a top-layer edge into the middle layer on the right.', orientation: 'Match the front color and keep the target slot on the right.', moves: ['U', 'R', "U'", "R'", "U'", "F'", 'U', 'F'], difficulty: 'Medium', explanation: 'Keep the matched edge at the front before starting.' },
+    { id: 'yellow-cross', title: 'Yellow cross algorithm', category: 'Last layer', goal: 'Turn the yellow dot, line, or L into a yellow cross.', orientation: 'Hold yellow on top; keep a line horizontal or an L in the top-left.', moves: ['F', 'R', 'U', "R'", "U'", "F'"], difficulty: 'Medium', explanation: 'Repeat the sequence until the four yellow edge stickers face up.' },
+    { id: 'corner-twist', title: 'Twist a last-layer corner', category: 'Last layer', goal: 'Turn one top corner so yellow faces upward.', orientation: 'Hold the unsolved corner at front-right-top.', moves: ["R'", "D'", 'R', 'D'], difficulty: 'Easy', explanation: 'Finish all four moves before rotating only the top layer.' },
+    { id: 'sexy-move', title: 'Sexy move practice', category: 'Speed', goal: 'Build fluency with a common four-move rhythm.', orientation: 'Keep a chosen corner at front-right-top.', moves: ['R', 'U', "R'", "U'"], difficulty: 'Easy', explanation: 'This sequence appears inside many beginner and speed-solving algorithms.' }
+  ];
 
   const key = (p, n) => `${p.join(',')}|${n.join(',')}`;
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
@@ -1013,5 +1020,6 @@
     getLocalDateKey,
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
+  window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
