@@ -23,6 +23,7 @@
         <button class="button" type="button" id="algorithms-toggle" aria-expanded="false" aria-controls="algorithms">Algorithms</button>
         <button class="button" type="button" id="state-toggle" aria-expanded="false" aria-controls="state-tools">State</button>
         <button class="button" type="button" id="progress-toggle" aria-expanded="false" aria-controls="progress">Progress</button>
+        <button class="button" type="button" id="input-toggle" aria-expanded="false" aria-controls="input-help">Input help</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -87,6 +88,11 @@
         <label class="progress-month" for="progress-month-input">Month<input type="month" id="progress-month-input"></label>
         <div class="calendar-week" aria-hidden="true"><span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span></div>
         <div class="progress-calendar" id="progress-calendar" role="grid" aria-label="Progress calendar"></div>
+      </section>
+
+      <section class="input-help" id="input-help" hidden aria-labelledby="input-help-title">
+        <div class="input-help-heading"><div><p class="eyebrow">Fast controls</p><h2 id="input-help-title">Keyboard and gamepad</h2></div><button type="button" id="input-close">Close</button></div>
+        <div id="input-help-list"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">
