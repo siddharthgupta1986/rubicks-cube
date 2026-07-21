@@ -1636,6 +1636,24 @@
   viewport.addEventListener('pointercancel', releasePointer);
   scrambleGenerate.addEventListener('click', generateStudioScramble);
   [scrambleLength, scrambleSeed, scrambleFaceMode, scrambleDoubles].forEach(control => control.addEventListener('change', generateStudioScramble));
+  scrambleApply.addEventListener('click', async () => {
+    if (busy || !studioMoves.length) return;
+    history = [];
+    initialize();
+    status.textContent = 'Applying custom scramble…';
+    await runSequence(studioMoves, true);
+    solveButton.disabled = false;
+    status.textContent = `Custom scramble applied: ${studioMoves.length} legal turns. Use Solve to reverse it.`;
+  });
+  scrambleCopy.addEventListener('click', async () => {
+    if (!studioMoves.length) return;
+    try {
+      await copyText(studioMoves.join(' '));
+      status.textContent = 'Scramble notation copied.';
+    } catch (error) {
+      status.textContent = 'Could not copy notation. Select the preview to copy it.';
+    }
+  });
   feedbackSound.addEventListener('change', updateFeedbackPreferences);
   feedbackVibration.addEventListener('change', updateFeedbackPreferences);
   feedbackIntensity.addEventListener('change', updateFeedbackPreferences);
