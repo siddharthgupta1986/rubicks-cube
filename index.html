@@ -24,6 +24,7 @@
         <button class="button" type="button" id="state-toggle" aria-expanded="false" aria-controls="state-tools">State</button>
         <button class="button" type="button" id="progress-toggle" aria-expanded="false" aria-controls="progress">Progress</button>
         <button class="button" type="button" id="input-toggle" aria-expanded="false" aria-controls="input-help">Input help</button>
+        <button class="button" type="button" id="achievements-toggle" aria-expanded="false" aria-controls="achievements">Achievements</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -93,6 +94,11 @@
       <section class="input-help" id="input-help" hidden aria-labelledby="input-help-title">
         <div class="input-help-heading"><div><p class="eyebrow">Fast controls</p><h2 id="input-help-title">Keyboard and gamepad</h2></div><button type="button" id="input-close">Close</button></div>
         <div id="input-help-list"></div>
+      </section>
+
+      <section class="achievements" id="achievements" hidden aria-labelledby="achievements-title">
+        <div class="achievements-heading"><div><p class="eyebrow">Milestones</p><h2 id="achievements-title">Achievements</h2></div><button type="button" id="achievements-close">Close</button></div>
+        <div class="achievement-list" id="achievement-list"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">

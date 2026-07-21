@@ -55,6 +55,10 @@
   const inputHelp = document.getElementById('input-help');
   const inputClose = document.getElementById('input-close');
   const inputHelpList = document.getElementById('input-help-list');
+  const achievementsToggle = document.getElementById('achievements-toggle');
+  const achievements = document.getElementById('achievements');
+  const achievementsClose = document.getElementById('achievements-close');
+  const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -1299,6 +1303,21 @@
     gamepad.append(gamepadKey, gamepadLabel);
     inputHelpList.append(gamepad);
   }
+  function renderAchievements() {
+    achievementList.replaceChildren(...achievementCatalog.map(achievement => {
+      const card = document.createElement('article');
+      card.className = 'achievement-card is-locked';
+      const title = document.createElement('h3');
+      title.textContent = achievement.title;
+      const description = document.createElement('p');
+      description.textContent = achievement.description;
+      const state = document.createElement('div');
+      state.className = 'achievement-status';
+      state.textContent = 'Locked';
+      card.append(title, description, state);
+      return card;
+    }));
+  }
   inputToggle.addEventListener('click', () => {
     inputHelp.hidden = false;
     inputToggle.setAttribute('aria-expanded', 'true');
@@ -1309,6 +1328,17 @@
     inputHelp.hidden = true;
     inputToggle.setAttribute('aria-expanded', 'false');
     status.textContent = 'Input help closed.';
+  });
+  achievementsToggle.addEventListener('click', () => {
+    achievements.hidden = false;
+    achievementsToggle.setAttribute('aria-expanded', 'true');
+    renderAchievements();
+    status.textContent = 'Achievements opened.';
+  });
+  achievementsClose.addEventListener('click', () => {
+    achievements.hidden = true;
+    achievementsToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Achievements closed.';
   });
   algorithmList.addEventListener('click', async event => {
     const button = event.target.closest('button[data-algorithm]');
