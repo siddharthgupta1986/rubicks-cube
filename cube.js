@@ -141,6 +141,28 @@
     }
   }
 
+  function encodeReplay(replay) {
+    if (!isReplay(replay)) throw new Error('Cannot encode an invalid replay.');
+    const bytes = new TextEncoder().encode(JSON.stringify(replay));
+    let binary = '';
+    bytes.forEach(byte => { binary += String.fromCharCode(byte); });
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function decodeReplay(code) {
+    if (typeof code !== 'string' || code.length > 12000) throw new Error('Replay code is too long or invalid.');
+    try {
+      const padded = code.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((code.length + 3) % 4);
+      const binary = atob(padded);
+      const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+      const replay = JSON.parse(new TextDecoder().decode(bytes));
+      if (!isReplay(replay)) throw new Error('Replay code is invalid.');
+      return replay;
+    } catch (error) {
+      throw new Error('Replay code is invalid.');
+    }
+  }
+
   function createSeededRandom(seed) {
     let value = seed >>> 0;
     return () => {
@@ -875,5 +897,5 @@
     getLocalDateKey,
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
-  window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, play: playReplay, step: stepReplay, version: replayVersion });
+  window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
