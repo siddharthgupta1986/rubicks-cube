@@ -88,6 +88,7 @@
   const replayStorageKey = 'rubiks-cube.replays.v1';
   const algorithmStorageKey = 'rubiks-cube.algorithms.v1';
   const progressStorageKey = 'rubiks-cube.progress.v1';
+  const achievementStorageKey = 'rubiks-cube.achievements.v1';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -128,6 +129,7 @@
   let selectedAlgorithmCategory = 'all';
   let algorithmProgress = {};
   let progressEvents = [];
+  let achievementState = {};
   let gamepadTimerId = 0;
   let gamepadButtons = [];
   let rotation = { x: -28, y: 36 };
@@ -391,12 +393,49 @@
     }
   }
 
+  function loadAchievementState() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(achievementStorageKey) || '{}');
+      return stored && typeof stored === 'object' && !Array.isArray(stored) ? stored : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function saveAchievementState() {
+    try {
+      window.localStorage.setItem(achievementStorageKey, JSON.stringify(achievementState));
+    } catch (error) {
+      // Private browsing modes can deny storage; unlocks remain available in memory.
+    }
+  }
+
+  function evaluateAchievements() {
+    const counts = type => progressEvents.filter(event => event.type === type).length;
+    const activeDays = new Set(progressEvents.map(event => event.date)).size;
+    const algorithmPractice = Object.values(algorithmProgress).reduce((sum, progress) => sum + (progress.count || 0), 0);
+    const values = { solved: counts('solved'), activeDays, mission: counts('mission'), algorithmPractice, replay: replayRecords.length, keyboard: counts('keyboard') };
+    let unlockedTitle = '';
+    achievementCatalog.forEach(achievement => {
+      if (!achievementState[achievement.id] && values[achievement.rule.type] >= achievement.rule.count) {
+        achievementState[achievement.id] = { unlockedAt: new Date().toISOString() };
+        unlockedTitle = achievement.title;
+      }
+    });
+    if (unlockedTitle) {
+      saveAchievementState();
+      renderAchievements();
+      status.textContent = `Achievement unlocked: ${unlockedTitle}.`;
+    }
+  }
+
   function recordProgressEvent(type, id, date = getLocalDateKey()) {
     if (typeof type !== 'string' || typeof id !== 'string') return false;
     const duplicate = progressEvents.some(event => event.type === type && event.id === id && event.date === date);
     if (duplicate) return false;
     progressEvents.push({ type, id, date });
     saveProgressEvents();
+    evaluateAchievements();
     return true;
   }
 
@@ -508,6 +547,7 @@
     const replay = createReplay(history, history.map((move, index) => index * 95), { name: `Replay ${new Date().toLocaleString()}`, source: 'cube' });
     replayRecords = [...replayRecords, replay].slice(-20);
     saveReplayRecords();
+    recordProgressEvent('replay', replay.metadata.name);
     renderReplays();
     status.textContent = 'Replay saved.';
   }
@@ -811,6 +851,7 @@
       if (pressed && !gamepadButtons[index] && gamepadShortcuts[index] && !busy) {
         const move = gamepadShortcuts[index];
         turn(move);
+        recordProgressEvent('gamepad', move);
         solveButton.disabled = false;
         status.textContent = `${move} turn applied from the gamepad.`;
         if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
@@ -1094,6 +1135,7 @@
     if (!move || busy) return;
     event.preventDefault();
     turn(move);
+    recordProgressEvent('keyboard', move);
     solveButton.disabled = false;
     status.textContent = `${move} turn applied from the keyboard.`;
     announceGuidedProgress();
@@ -1306,14 +1348,15 @@
   function renderAchievements() {
     achievementList.replaceChildren(...achievementCatalog.map(achievement => {
       const card = document.createElement('article');
-      card.className = 'achievement-card is-locked';
+      const unlocked = Boolean(achievementState[achievement.id]);
+      card.className = `achievement-card${unlocked ? ' is-unlocked' : ' is-locked'}`;
       const title = document.createElement('h3');
       title.textContent = achievement.title;
       const description = document.createElement('p');
       description.textContent = achievement.description;
       const state = document.createElement('div');
       state.className = 'achievement-status';
-      state.textContent = 'Locked';
+      state.textContent = unlocked ? 'Unlocked' : 'Locked';
       card.append(title, description, state);
       return card;
     }));
@@ -1351,6 +1394,7 @@
     await runSequence(algorithm.moves, true);
     algorithmProgress[algorithm.id] = { count: (algorithmProgress[algorithm.id]?.count || 0) + 1, lastPractised: new Date().toISOString() };
     saveAlgorithmProgress();
+    evaluateAchievements();
     renderAlgorithms();
     status.textContent = `${algorithm.title} practice applied. Use Solve to undo it.`;
   });
@@ -1372,6 +1416,7 @@
     solveButton.disabled = true;
     status.textContent = 'Solved — every face is back in place.';
     celebrateSolved();
+    recordProgressEvent('solved', 'cube');
     checkActiveMission();
   });
   dailyShareButton.addEventListener('click', copyDailyResult);
@@ -1435,6 +1480,7 @@
   algorithmProgress = loadAlgorithmProgress();
   missionProgress = loadMissionProgress();
   progressEvents = loadProgressEvents();
+  achievementState = loadAchievementState();
   renderMissions();
   replayRecords = loadReplayRecords();
   renderReplays();
