@@ -89,6 +89,14 @@
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
   });
   const gamepadShortcuts = Object.freeze({ 0: 'R', 1: 'U', 2: "R'", 3: "U'", 4: 'F', 5: "F'" });
+  const achievementCatalog = [
+    { id: 'first-solve', title: 'First solve', description: 'Complete your first solved cube.', rule: { type: 'solved', count: 1 } },
+    { id: 'daily-three', title: 'Three-day rhythm', description: 'Complete activities on three different dates.', rule: { type: 'activeDays', count: 3 } },
+    { id: 'mission-one', title: 'Mission accepted', description: 'Complete your first mini mission.', rule: { type: 'mission', count: 1 } },
+    { id: 'algorithm-five', title: 'Notation fluent', description: 'Practice any algorithm five times.', rule: { type: 'algorithmPractice', count: 5 } },
+    { id: 'replay-saved', title: 'Keep the receipt', description: 'Save your first solve replay.', rule: { type: 'replay', count: 1 } },
+    { id: 'keyboard-turn', title: 'Hands off the mouse', description: 'Use a keyboard face turn.', rule: { type: 'keyboard', count: 1 } }
+  ];
   const cubeStateVersion = 1;
   const replayVersion = 1;
   let stickers = [];
@@ -1410,5 +1418,6 @@
   window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
+  window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
