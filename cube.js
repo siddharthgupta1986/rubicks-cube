@@ -556,11 +556,16 @@
 
   async function runSequence(moves, record) {
     setBusy(true);
-    for (const move of moves) {
-      turn(move, record);
-      if (!reducedMotion) await wait(95);
+    cube.classList.add('is-sequencing');
+    try {
+      for (const move of moves) {
+        turn(move, record);
+        if (!reducedMotion) await wait(95);
+      }
+    } finally {
+      cube.classList.remove('is-sequencing');
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   function shuffleMoves(length = 24) {
