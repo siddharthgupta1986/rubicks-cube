@@ -58,6 +58,17 @@
         </div>
         <p class="feedback-status" id="feedback-status" aria-live="polite"></p>
       </section>
+      <section class="scramble-studio" aria-labelledby="scramble-studio-title">
+        <div><p class="eyebrow">Build your setup</p><h2 id="scramble-studio-title">Scramble studio</h2></div>
+        <div class="scramble-controls">
+          <label for="scramble-length">Length<input type="number" id="scramble-length" min="1" max="80" value="20"></label>
+          <label for="scramble-seed">Seed<input type="number" id="scramble-seed" min="0" max="999999" value="1"></label>
+          <label for="scramble-face-mode">Faces<select id="scramble-face-mode"><option value="all">All faces</option><option value="vertical">U/D only</option><option value="horizontal">F/B only</option><option value="sides">R/L only</option></select></label>
+          <label><input type="checkbox" id="scramble-doubles"> Allow double turns</label>
+        </div>
+        <div class="scramble-actions"><button type="button" id="scramble-generate">Regenerate</button><button type="button" id="scramble-apply" class="button-primary">Apply scramble</button><button type="button" id="scramble-copy">Copy notation</button></div>
+        <div class="scramble-preview" id="scramble-preview" aria-live="polite"></div>
+      </section>
 
       <section class="speedrun" id="speedrun" hidden aria-labelledby="speedrun-title">
         <div class="speedrun-heading">
