@@ -16,6 +16,7 @@
   const speedrunToggle = document.getElementById('speedrun-toggle');
   const speedrun = document.getElementById('speedrun');
   const speedrunTime = document.getElementById('speedrun-time');
+  const speedrunMoves = document.getElementById('speedrun-moves');
   const speedrunStart = document.getElementById('speedrun-start');
   const speedrunReset = document.getElementById('speedrun-reset');
   const speedrunInspection = document.getElementById('speedrun-inspection');
@@ -54,6 +55,8 @@
   let speedrunTimerId = 0;
   let speedrunInspectionId = 0;
   let speedrunInspectionEndsAt = 0;
+  let speedrunMoveCount = 0;
+  let speedrunSetup = false;
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -225,6 +228,15 @@
     status.textContent = 'Speedrun started. Solve the cube as quickly as you can.';
   }
 
+  function finishSpeedrun() {
+    if (speedrunState !== 'running') return;
+    const elapsed = performance.now() - speedrunStartedAt;
+    stopSpeedrunTimer();
+    setSpeedrunState('completed');
+    speedrunTime.textContent = formatSpeedrunTime(elapsed);
+    status.textContent = `Speedrun complete in ${formatSpeedrunTime(elapsed)} with ${speedrunMoveCount} moves.`;
+  }
+
   function beginInspection() {
     setSpeedrunState('inspecting');
     speedrunInspectionEndsAt = performance.now() + 15000;
@@ -249,9 +261,13 @@
     }
     initialize();
     history = [];
+    speedrunMoveCount = 0;
+    speedrunMoves.textContent = 'Moves: 0';
+    speedrunSetup = true;
     setSpeedrunState('scrambling');
     status.textContent = 'Preparing your speedrun scramble…';
     await runSequence(shuffleMoves(), true);
+    speedrunSetup = false;
     if (speedrunInspection.checked && !reducedMotion) beginInspection();
     else beginTimedSpeedrun();
   }
@@ -260,6 +276,9 @@
     stopSpeedrunTimer();
     setSpeedrunState('idle');
     speedrunStartedAt = 0;
+    speedrunMoveCount = 0;
+    speedrunMoves.textContent = 'Moves: 0';
+    speedrunSetup = false;
     speedrunTime.textContent = '0:00.00';
     status.textContent = 'Speedrun timer reset.';
   }
@@ -434,6 +453,10 @@
         moves: dailyChallengePlayerMoves
       });
     }
+    if (record && speedrunState === 'running' && !speedrunSetup) {
+      speedrunMoveCount += 1;
+      speedrunMoves.textContent = `Moves: ${speedrunMoveCount}`;
+    }
     render();
   }
 
@@ -496,6 +519,7 @@
     solveButton.disabled = false;
     status.textContent = `${button.dataset.move} turn applied.`;
     announceGuidedProgress();
+    if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
   });
 
   shuffleButton.addEventListener('click', async () => {
