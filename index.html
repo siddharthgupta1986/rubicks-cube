@@ -49,6 +49,15 @@
         </div>
         <p class="camera-status" id="camera-status" aria-live="polite">Solved view</p>
       </section>
+      <section class="feedback-tools" aria-labelledby="feedback-title">
+        <div><p class="eyebrow">Optional feedback</p><h2 id="feedback-title">Sound and vibration</h2></div>
+        <div class="feedback-options">
+          <label><input type="checkbox" id="feedback-sound"> Sound</label>
+          <label><input type="checkbox" id="feedback-vibration"> Vibration</label>
+          <label for="feedback-intensity">Intensity<select id="feedback-intensity"><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option></select></label>
+        </div>
+        <p class="feedback-status" id="feedback-status" aria-live="polite"></p>
+      </section>
 
       <section class="speedrun" id="speedrun" hidden aria-labelledby="speedrun-title">
         <div class="speedrun-heading">
