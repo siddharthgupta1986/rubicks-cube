@@ -69,6 +69,13 @@
         <div class="scramble-actions"><button type="button" id="scramble-generate">Regenerate</button><button type="button" id="scramble-apply" class="button-primary">Apply scramble</button><button type="button" id="scramble-copy">Copy notation</button></div>
         <div class="scramble-preview" id="scramble-preview" role="list" aria-label="Generated scramble moves" aria-live="polite"></div>
       </section>
+      <section class="two-player" aria-labelledby="two-player-title">
+        <div><p class="eyebrow">Local competition</p><h2 id="two-player-title">Pass and play</h2></div>
+        <div class="two-player-setup"><label for="player-one-name">Player 1<input id="player-one-name" value="Player 1" maxlength="24"></label><label for="player-two-name">Player 2<input id="player-two-name" value="Player 2" maxlength="24"></label></div>
+        <div class="two-player-actions"><button type="button" id="two-player-start" class="button-primary">Start round</button><button type="button" id="two-player-next" disabled>Pass turn</button><button type="button" id="two-player-end" disabled>End round</button><button type="button" id="two-player-reset">Reset</button></div>
+        <p class="two-player-status" id="two-player-status" aria-live="polite">Ready for two players.</p>
+        <div class="two-player-score" id="two-player-score"></div>
+      </section>
 
       <section class="speedrun" id="speedrun" hidden aria-labelledby="speedrun-title">
         <div class="speedrun-heading">
