@@ -18,7 +18,7 @@
         <button class="button button-primary" type="button" id="shuffle">Shuffle</button>
         <button class="button" type="button" id="daily-challenge">Daily challenge</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
-        <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Tutor mode</button>
+        <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
 
       <fieldset class="turns" id="turn-controls">
@@ -44,13 +44,15 @@
           <p class="eyebrow">Beginner lesson <span id="tutor-count">1 of 8</span></p>
           <h2 id="tutor-title"></h2>
         </div>
+        <p class="tutor-goal" id="tutor-goal"></p>
         <p id="tutor-body"></p>
+        <p class="tutor-orientation" id="tutor-orientation"></p>
         <p class="tutor-tip" id="tutor-tip"></p>
         <div class="notation" id="tutor-moves" aria-label="Moves for this lesson"></div>
         <div class="tutor-actions">
           <button type="button" id="tutor-prev">Back</button>
           <button type="button" id="tutor-next">Next step</button>
-          <button class="button-primary" type="button" id="tutor-demo" hidden>Practice this move</button>
+          <button class="button-primary" type="button" id="tutor-demo" hidden>Practice this stage</button>
         </div>
       </section>
     </section>
