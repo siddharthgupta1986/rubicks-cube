@@ -22,6 +22,10 @@
   const speedrunInspection = document.getElementById('speedrun-inspection');
   const speedrunClear = document.getElementById('speedrun-clear');
   const speedrunStatsSummary = document.getElementById('speedrun-stats-summary');
+  const missionsToggle = document.getElementById('missions-toggle');
+  const missions = document.getElementById('missions');
+  const missionsClose = document.getElementById('missions-close');
+  const missionList = document.getElementById('mission-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -65,6 +69,7 @@
   let speedrunSetup = false;
   let speedrunRecords = [];
   let celebrationTimeout = 0;
+  let activeMission = null;
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -89,7 +94,7 @@
     { id: 'yellow-edges', goal: 'Finish the final four yellow edges.', orientation: 'Hold a matching top edge at the back.', hints: ['If none matches, run the algorithm once and check again.', 'The solved state has six solid-color faces.'], success: 'solved' }
   ];
   const lessons = lessonDrafts.map((lesson, index) => ({ ...lesson, ...guidedStageMetadata[index] }));
-  const missions = [
+  const missionData = [
     { id: 'make-white-cross', title: 'White cross sprint', goal: 'Build the white cross with matching side colors.', setup: ['F', 'R', 'U', "R'", "U'", "F'"], success: 'whiteCross', reward: 'Cross starter', difficulty: 'Easy' },
     { id: 'yellow-cross', title: 'Yellow cross', goal: 'Make a yellow cross on the top face.', setup: ['F', 'R', 'U', "R'", "U'", "F'"], success: 'yellowCross', reward: 'Last-layer ready', difficulty: 'Medium' },
     { id: 'solve-from-scramble', title: 'Full solve finish', goal: 'Return the cube to six solid-color faces.', setup: ['R', 'U', "R'", "U'", 'F', 'R', "F'", "U'"], success: 'solved', reward: 'Cube finisher', difficulty: 'Hard' }
@@ -376,6 +381,40 @@
     celebrationTimeout = window.setTimeout(hideCelebration, 4200);
   }
 
+  function renderMissions() {
+    missionList.replaceChildren(...missionData.map(mission => {
+      const card = document.createElement('article');
+      card.className = 'mission-card';
+      const title = document.createElement('h3');
+      title.textContent = mission.title;
+      const description = document.createElement('p');
+      description.textContent = mission.goal;
+      const meta = document.createElement('div');
+      meta.className = 'mission-meta';
+      meta.textContent = `${mission.difficulty} · Reward: ${mission.reward}`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.mission = mission.id;
+      button.textContent = activeMission === mission.id ? 'Retry mission' : 'Start mission';
+      card.append(title, description, meta, button);
+      return card;
+    }));
+  }
+
+  async function startMission(id) {
+    if (busy) return;
+    const mission = missionData.find(item => item.id === id);
+    if (!mission) return;
+    activeMission = mission.id;
+    hideCelebration();
+    initialize();
+    history = [];
+    status.textContent = `Setting up ${mission.title}…`;
+    renderMissions();
+    await runSequence(mission.setup, true);
+    status.textContent = `${mission.title} started. ${mission.goal}`;
+  }
+
   async function copyDailyResult() {
     const text = dailyResultSummary.textContent;
     try {
@@ -651,6 +690,21 @@
     renderSpeedrunStats();
     status.textContent = 'Speedrun history cleared.';
   });
+  missionsToggle.addEventListener('click', () => {
+    missions.hidden = false;
+    missionsToggle.setAttribute('aria-expanded', 'true');
+    renderMissions();
+    status.textContent = 'Missions opened. Choose a challenge card.';
+  });
+  missionsClose.addEventListener('click', () => {
+    missions.hidden = true;
+    missionsToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Missions closed.';
+  });
+  missionList.addEventListener('click', event => {
+    const button = event.target.closest('button[data-mission]');
+    if (button) startMission(button.dataset.mission);
+  });
   themeSelect.addEventListener('change', event => {
     setTheme(event.target.value);
     status.textContent = `${themeSelect.options[themeSelect.selectedIndex].text} theme selected.`;
@@ -728,6 +782,7 @@
   speedrunRecords = loadSpeedrunRecords();
   renderSpeedrunStats();
   setTheme(loadTheme());
+  renderMissions();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
