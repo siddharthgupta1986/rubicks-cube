@@ -20,6 +20,7 @@
         <button class="button" type="button" id="speedrun-toggle" aria-expanded="false" aria-controls="speedrun">Speedrun</button>
         <button class="button" type="button" id="missions-toggle" aria-expanded="false" aria-controls="missions">Missions</button>
         <button class="button" type="button" id="replays-toggle" aria-expanded="false" aria-controls="replays">Replays</button>
+        <button class="button" type="button" id="algorithms-toggle" aria-expanded="false" aria-controls="algorithms">Algorithms</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -62,6 +63,12 @@
         <div class="replays-heading"><div><p class="eyebrow">Saved sequences</p><h2 id="replays-title">Replay browser</h2></div><button type="button" id="replays-close">Close</button></div>
         <div class="replay-actions"><button class="button-primary" type="button" id="replay-save">Save current moves</button></div>
         <div class="replay-list" id="replay-list"></div>
+      </section>
+
+      <section class="algorithms" id="algorithms" hidden aria-labelledby="algorithms-title">
+        <div class="algorithms-heading"><div><p class="eyebrow">Notation library</p><h2 id="algorithms-title">Algorithms</h2></div><button type="button" id="algorithms-close">Close</button></div>
+        <label class="algorithm-filter" for="algorithm-category">Category<select id="algorithm-category"><option value="all">All categories</option></select></label>
+        <div class="algorithm-list" id="algorithm-list"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">

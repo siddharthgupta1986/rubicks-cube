@@ -31,6 +31,11 @@
   const replaysClose = document.getElementById('replays-close');
   const replaySave = document.getElementById('replay-save');
   const replayList = document.getElementById('replay-list');
+  const algorithmsToggle = document.getElementById('algorithms-toggle');
+  const algorithms = document.getElementById('algorithms');
+  const algorithmsClose = document.getElementById('algorithms-close');
+  const algorithmCategory = document.getElementById('algorithm-category');
+  const algorithmList = document.getElementById('algorithm-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -81,6 +86,7 @@
   let missionPreparing = false;
   let missionProgress = {};
   let replayRecords = [];
+  let selectedAlgorithmCategory = 'all';
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -335,6 +341,37 @@
     saveReplayRecords();
     renderReplays();
     status.textContent = 'Replay saved.';
+  }
+
+  function renderAlgorithms() {
+    const visible = selectedAlgorithmCategory === 'all'
+      ? algorithmCatalog
+      : algorithmCatalog.filter(algorithm => algorithm.category === selectedAlgorithmCategory);
+    algorithmList.replaceChildren(...visible.map(algorithm => {
+      const card = document.createElement('article');
+      card.className = 'algorithm-card';
+      const title = document.createElement('h3');
+      title.textContent = algorithm.title;
+      const meta = document.createElement('div');
+      meta.className = 'algorithm-meta';
+      meta.textContent = `${algorithm.category} · ${algorithm.difficulty}`;
+      const goal = document.createElement('p');
+      goal.textContent = `Goal: ${algorithm.goal}`;
+      const orientation = document.createElement('p');
+      orientation.textContent = `Orientation: ${algorithm.orientation}`;
+      const explanation = document.createElement('p');
+      explanation.textContent = algorithm.explanation;
+      const notation = document.createElement('div');
+      notation.className = 'algorithm-notation';
+      algorithm.moves.forEach(move => {
+        const chip = document.createElement('span');
+        chip.className = 'move-chip';
+        chip.textContent = move;
+        notation.append(chip);
+      });
+      card.append(title, meta, goal, orientation, explanation, notation);
+      return card;
+    }));
   }
 
   function saveMissionProgress() {
@@ -933,6 +970,27 @@
       }
     }
   });
+  [...new Set(algorithmCatalog.map(algorithm => algorithm.category))].forEach(category => {
+    const option = document.createElement('option');
+    option.value = category;
+    option.textContent = category;
+    algorithmCategory.append(option);
+  });
+  algorithmsToggle.addEventListener('click', () => {
+    algorithms.hidden = false;
+    algorithmsToggle.setAttribute('aria-expanded', 'true');
+    renderAlgorithms();
+    status.textContent = 'Algorithm library opened.';
+  });
+  algorithmsClose.addEventListener('click', () => {
+    algorithms.hidden = true;
+    algorithmsToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Algorithm library closed.';
+  });
+  algorithmCategory.addEventListener('change', event => {
+    selectedAlgorithmCategory = event.target.value;
+    renderAlgorithms();
+  });
   themeSelect.addEventListener('change', event => {
     setTheme(event.target.value);
     status.textContent = `${themeSelect.options[themeSelect.selectedIndex].text} theme selected.`;
@@ -1015,6 +1073,7 @@
   renderMissions();
   replayRecords = loadReplayRecords();
   renderReplays();
+  renderAlgorithms();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
