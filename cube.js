@@ -26,6 +26,11 @@
   const missions = document.getElementById('missions');
   const missionsClose = document.getElementById('missions-close');
   const missionList = document.getElementById('mission-list');
+  const replaysToggle = document.getElementById('replays-toggle');
+  const replays = document.getElementById('replays');
+  const replaysClose = document.getElementById('replays-close');
+  const replaySave = document.getElementById('replay-save');
+  const replayList = document.getElementById('replay-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -52,6 +57,7 @@
   const speedrunStorageKey = 'rubiks-cube.speedrun.v1';
   const themeStorageKey = 'rubiks-cube.theme.v1';
   const missionStorageKey = 'rubiks-cube.missions.v1';
+  const replayStorageKey = 'rubiks-cube.replays.v1';
   const replayVersion = 1;
   let stickers = [];
   let history = [];
@@ -74,6 +80,7 @@
   let activeMission = null;
   let missionPreparing = false;
   let missionProgress = {};
+  let replayRecords = [];
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -246,6 +253,81 @@
     } catch (error) {
       return {};
     }
+  }
+
+  function loadReplayRecords() {
+    try {
+      const stored = JSON.parse(window.localStorage.getItem(replayStorageKey) || '[]');
+      return Array.isArray(stored) ? stored.filter(isReplay).slice(-20) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function saveReplayRecords() {
+    try {
+      window.localStorage.setItem(replayStorageKey, JSON.stringify(replayRecords.slice(-20)));
+    } catch (error) {
+      // Private browsing modes can deny storage; the current replay remains usable in memory.
+    }
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.opacity = '0';
+    document.body.append(textArea);
+    textArea.select();
+    const copied = document.execCommand('copy');
+    textArea.remove();
+    return copied ? Promise.resolve() : Promise.reject(new Error('Copy failed'));
+  }
+
+  function renderReplays() {
+    replayList.replaceChildren();
+    if (!replayRecords.length) {
+      const empty = document.createElement('p');
+      empty.textContent = 'No saved replays yet. Make some moves, then save the current sequence.';
+      empty.className = 'status';
+      replayList.append(empty);
+      return;
+    }
+    replayRecords.slice().reverse().forEach((replay, index) => {
+      const card = document.createElement('article');
+      card.className = 'replay-card';
+      const description = document.createElement('p');
+      description.textContent = `${replay.metadata.name} · ${replay.moves.length} moves`;
+      const actions = document.createElement('div');
+      actions.className = 'replay-card-actions';
+      const play = document.createElement('button');
+      play.type = 'button';
+      play.dataset.replayIndex = String(replayRecords.length - 1 - index);
+      play.dataset.replayAction = 'play';
+      play.textContent = 'Play';
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.dataset.replayIndex = String(replayRecords.length - 1 - index);
+      copy.dataset.replayAction = 'copy';
+      copy.textContent = 'Copy code';
+      actions.append(play, copy);
+      card.append(description, actions);
+      replayList.append(card);
+    });
+  }
+
+  function saveCurrentReplay() {
+    if (!history.length) {
+      status.textContent = 'Make at least one move before saving a replay.';
+      return;
+    }
+    const replay = createReplay(history, history.map((move, index) => index * 95), { name: `Replay ${new Date().toLocaleString()}`, source: 'cube' });
+    replayRecords = [...replayRecords, replay].slice(-20);
+    saveReplayRecords();
+    renderReplays();
+    status.textContent = 'Replay saved.';
   }
 
   function saveMissionProgress() {
@@ -812,6 +894,38 @@
     const button = event.target.closest('button[data-mission]');
     if (button) startMission(button.dataset.mission);
   });
+  replaysToggle.addEventListener('click', () => {
+    replays.hidden = false;
+    replaysToggle.setAttribute('aria-expanded', 'true');
+    renderReplays();
+    status.textContent = 'Replay browser opened.';
+  });
+  replaysClose.addEventListener('click', () => {
+    replays.hidden = true;
+    replaysToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Replay browser closed.';
+  });
+  replaySave.addEventListener('click', saveCurrentReplay);
+  replayList.addEventListener('click', async event => {
+    const button = event.target.closest('button[data-replay-action]');
+    if (!button || busy) return;
+    const replay = replayRecords[Number(button.dataset.replayIndex)];
+    if (!replay) return;
+    if (button.dataset.replayAction === 'play') {
+      initialize();
+      history = [];
+      status.textContent = 'Playing replay…';
+      await playReplay(replay, true);
+      status.textContent = 'Replay finished.';
+    } else {
+      try {
+        await copyText(encodeReplay(replay));
+        status.textContent = 'Replay code copied.';
+      } catch (error) {
+        status.textContent = 'Could not copy the replay code.';
+      }
+    }
+  });
   themeSelect.addEventListener('change', event => {
     setTheme(event.target.value);
     status.textContent = `${themeSelect.options[themeSelect.selectedIndex].text} theme selected.`;
@@ -892,6 +1006,8 @@
   setTheme(loadTheme());
   missionProgress = loadMissionProgress();
   renderMissions();
+  replayRecords = loadReplayRecords();
+  renderReplays();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,

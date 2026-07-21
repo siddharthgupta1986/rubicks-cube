@@ -19,6 +19,7 @@
         <button class="button" type="button" id="daily-challenge">Daily challenge</button>
         <button class="button" type="button" id="speedrun-toggle" aria-expanded="false" aria-controls="speedrun">Speedrun</button>
         <button class="button" type="button" id="missions-toggle" aria-expanded="false" aria-controls="missions">Missions</button>
+        <button class="button" type="button" id="replays-toggle" aria-expanded="false" aria-controls="replays">Replays</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
@@ -55,6 +56,12 @@
       <section class="missions" id="missions" hidden aria-labelledby="missions-title">
         <div class="missions-heading"><div><p class="eyebrow">Mini challenges</p><h2 id="missions-title">Challenge cards</h2></div><button type="button" id="missions-close">Close</button></div>
         <div class="mission-list" id="mission-list"></div>
+      </section>
+
+      <section class="replays" id="replays" hidden aria-labelledby="replays-title">
+        <div class="replays-heading"><div><p class="eyebrow">Saved sequences</p><h2 id="replays-title">Replay browser</h2></div><button type="button" id="replays-close">Close</button></div>
+        <div class="replay-actions"><button class="button-primary" type="button" id="replay-save">Save current moves</button></div>
+        <div class="replay-list" id="replay-list"></div>
       </section>
 
       <fieldset class="turns" id="turn-controls">
