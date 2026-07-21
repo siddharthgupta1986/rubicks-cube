@@ -202,6 +202,36 @@
     return JSON.stringify(createCubeStateSnapshot());
   }
 
+  function validateCubeState(snapshot) {
+    if (!snapshot || snapshot.version !== cubeStateVersion || !Array.isArray(snapshot.stickers) || snapshot.stickers.length !== 54) throw new Error('Cube state must contain version 1 and 54 stickers.');
+    const positions = new Set();
+    const colors = {};
+    snapshot.stickers.forEach(sticker => {
+      if (!Array.isArray(sticker.position) || sticker.position.length !== 3 || !sticker.position.every(value => [-1, 0, 1].includes(value))) throw new Error('Cube state contains an invalid position.');
+      if (!Array.isArray(sticker.normal) || sticker.normal.length !== 3 || sticker.normal.filter(value => value !== 0).length !== 1 || !sticker.normal.some(value => Math.abs(value) === 1)) throw new Error('Cube state contains an invalid normal.');
+      if (!['white', 'yellow', 'red', 'orange', 'blue', 'green'].includes(sticker.color)) throw new Error('Cube state contains an invalid color.');
+      const key = `${sticker.position}|${sticker.normal}`;
+      if (positions.has(key)) throw new Error('Cube state contains duplicate stickers.');
+      positions.add(key);
+      colors[sticker.color] = (colors[sticker.color] || 0) + 1;
+    });
+    if (Object.values(colors).some(count => count !== 9)) throw new Error('Cube state must contain nine stickers of each color.');
+    return true;
+  }
+
+  function importCubeState(serialized) {
+    let snapshot;
+    try {
+      snapshot = typeof serialized === 'string' ? JSON.parse(serialized) : serialized;
+      validateCubeState(snapshot);
+    } catch (error) {
+      throw new Error(error.message || 'Cube state is invalid.');
+    }
+    stickers = snapshot.stickers.map(sticker => ({ position: sticker.position.slice(), normal: sticker.normal.slice(), color: sticker.color }));
+    history = [];
+    render();
+  }
+
   function createSeededRandom(seed) {
     let value = seed >>> 0;
     return () => {
@@ -1136,6 +1166,6 @@
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
   window.RubiksCubeAlgorithms = Object.freeze({ list: () => algorithmCatalog.map(algorithm => ({ ...algorithm, moves: algorithm.moves.slice() })) });
-  window.RubiksCubeState = Object.freeze({ export: serializeCubeState, version: cubeStateVersion });
+  window.RubiksCubeState = Object.freeze({ export: serializeCubeState, import: importCubeState, validate: validateCubeState, version: cubeStateVersion });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
