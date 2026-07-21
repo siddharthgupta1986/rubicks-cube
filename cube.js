@@ -13,6 +13,11 @@
   const viewport = document.getElementById('cube-viewport');
   const shuffleButton = document.getElementById('shuffle');
   const dailyChallengeButton = document.getElementById('daily-challenge');
+  const speedrunToggle = document.getElementById('speedrun-toggle');
+  const speedrun = document.getElementById('speedrun');
+  const speedrunTime = document.getElementById('speedrun-time');
+  const speedrunStart = document.getElementById('speedrun-start');
+  const speedrunReset = document.getElementById('speedrun-reset');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -43,6 +48,9 @@
   let dailyChallengePlayerMoves = 0;
   let dailyChallengeDateKey = '';
   let dailyResults = {};
+  let speedrunState = 'idle';
+  let speedrunStartedAt = 0;
+  let speedrunTimerId = 0;
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -179,6 +187,51 @@
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = String(totalSeconds % 60).padStart(2, '0');
     return `${minutes}:${seconds}`;
+  }
+
+  function formatSpeedrunTime(milliseconds) {
+    const totalSeconds = Math.max(0, milliseconds) / 1000;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = (totalSeconds % 60).toFixed(2).padStart(5, '0');
+    return `${minutes}:${seconds}`;
+  }
+
+  function renderSpeedrunTimer() {
+    speedrunTime.textContent = formatSpeedrunTime(performance.now() - speedrunStartedAt);
+  }
+
+  function stopSpeedrunTimer() {
+    if (speedrunTimerId) window.clearInterval(speedrunTimerId);
+    speedrunTimerId = 0;
+  }
+
+  function setSpeedrunState(state) {
+    speedrunState = state;
+    speedrunStart.disabled = busy || state === 'scrambling' || state === 'running';
+    speedrunReset.disabled = busy;
+    speedrunStart.textContent = state === 'running' ? 'Running…' : 'Start speedrun';
+  }
+
+  async function startSpeedrun() {
+    if (busy || speedrunState === 'running') return;
+    initialize();
+    history = [];
+    setSpeedrunState('scrambling');
+    status.textContent = 'Preparing your speedrun scramble…';
+    await runSequence(shuffleMoves(), true);
+    speedrunStartedAt = performance.now();
+    renderSpeedrunTimer();
+    speedrunTimerId = window.setInterval(renderSpeedrunTimer, 50);
+    setSpeedrunState('running');
+    status.textContent = 'Speedrun started. Solve the cube as quickly as you can.';
+  }
+
+  function resetSpeedrun() {
+    stopSpeedrunTimer();
+    setSpeedrunState('idle');
+    speedrunStartedAt = 0;
+    speedrunTime.textContent = '0:00.00';
+    status.textContent = 'Speedrun timer reset.';
   }
 
   function renderDailyResult(dateKey) {
@@ -440,6 +493,15 @@
     dailyChallengePreparing = false;
     status.textContent = `Daily challenge ready for ${dateKey}. Solve it at your own pace.`;
   });
+
+  speedrunToggle.addEventListener('click', () => {
+    const opening = speedrun.hidden;
+    speedrun.hidden = !opening;
+    speedrunToggle.setAttribute('aria-expanded', String(opening));
+    if (opening) status.textContent = 'Speedrun ready. Start when you are ready.';
+  });
+  speedrunStart.addEventListener('click', startSpeedrun);
+  speedrunReset.addEventListener('click', resetSpeedrun);
 
   solveButton.addEventListener('click', async () => {
     if (busy || !history.length) return;
