@@ -64,6 +64,14 @@
   const feedbackVibration = document.getElementById('feedback-vibration');
   const feedbackIntensity = document.getElementById('feedback-intensity');
   const feedbackStatus = document.getElementById('feedback-status');
+  const scrambleLength = document.getElementById('scramble-length');
+  const scrambleSeed = document.getElementById('scramble-seed');
+  const scrambleFaceMode = document.getElementById('scramble-face-mode');
+  const scrambleDoubles = document.getElementById('scramble-doubles');
+  const scrambleGenerate = document.getElementById('scramble-generate');
+  const scrambleApply = document.getElementById('scramble-apply');
+  const scrambleCopy = document.getElementById('scramble-copy');
+  const scramblePreview = document.getElementById('scramble-preview');
   const achievementList = document.getElementById('achievement-list');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
@@ -151,6 +159,7 @@
   let gamepadButtons = [];
   let rotation = { x: -28, y: 36 };
   let pointer = null;
+  let studioMoves = [];
   let tutorStep = 0;
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
@@ -1220,6 +1229,26 @@
     return moves;
   }
 
+  function studioFacePool(mode) {
+    return mode === 'vertical' ? ['U', 'D'] : mode === 'horizontal' ? ['F', 'B'] : mode === 'sides' ? ['R', 'L'] : Object.keys(faces);
+  }
+
+  function generateStudioScramble() {
+    const length = Math.max(1, Math.min(80, Number.parseInt(scrambleLength.value, 10) || 20));
+    const facesForMode = studioFacePool(scrambleFaceMode.value);
+    let seed = Math.max(0, Number.parseInt(scrambleSeed.value, 10) || 0) + 1;
+    const random = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    studioMoves = [];
+    while (studioMoves.length < length) {
+      const face = facesForMode[Math.floor(random() * facesForMode.length)];
+      if (studioMoves.length && studioMoves.at(-1)[0] === face) continue;
+      const suffix = scrambleDoubles.checked ? ['', "'", '2'][Math.floor(random() * 3)] : random() < .5 ? '' : "'";
+      studioMoves.push(`${face}${suffix}`);
+    }
+    scramblePreview.replaceChildren(...studioMoves.map(move => { const chip = document.createElement('span'); chip.className = 'move-chip'; chip.textContent = move; return chip; }));
+    status.textContent = `Generated ${studioMoves.length}-move scramble preview.`;
+  }
+
   controls.addEventListener('click', event => {
     const button = event.target.closest('button[data-move]');
     if (!button || busy) return;
@@ -1605,6 +1634,8 @@
   }
   viewport.addEventListener('pointerup', releasePointer);
   viewport.addEventListener('pointercancel', releasePointer);
+  scrambleGenerate.addEventListener('click', generateStudioScramble);
+  [scrambleLength, scrambleSeed, scrambleFaceMode, scrambleDoubles].forEach(control => control.addEventListener('change', generateStudioScramble));
   feedbackSound.addEventListener('change', updateFeedbackPreferences);
   feedbackVibration.addEventListener('change', updateFeedbackPreferences);
   feedbackIntensity.addEventListener('change', updateFeedbackPreferences);
@@ -1632,6 +1663,7 @@
   replayRecords = loadReplayRecords();
   renderReplays();
   renderAlgorithms();
+  generateStudioScramble();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
