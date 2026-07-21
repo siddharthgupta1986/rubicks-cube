@@ -13,6 +13,9 @@
   const viewport = document.getElementById('cube-viewport');
   const shuffleButton = document.getElementById('shuffle');
   const dailyChallengeButton = document.getElementById('daily-challenge');
+  const dailyResult = document.getElementById('daily-result');
+  const dailyResultSummary = document.getElementById('daily-result-summary');
+  const dailyShareButton = document.getElementById('daily-share');
   const solveButton = document.getElementById('solve');
   const controls = document.getElementById('turn-controls');
   const status = document.getElementById('status');
@@ -158,6 +161,43 @@
     dailyChallengeDateKey = '';
   }
 
+  function formatDuration(milliseconds) {
+    const totalSeconds = Math.max(0, Math.round(milliseconds / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    return `${minutes}:${seconds}`;
+  }
+
+  function renderDailyResult(dateKey) {
+    const result = dailyResults[dateKey];
+    if (!result || !result.completed) {
+      dailyResult.hidden = true;
+      return;
+    }
+    const bestLabel = result.best === result.timeMs ? ' New best!' : '';
+    dailyResultSummary.textContent = `${dateKey}: ${formatDuration(result.timeMs)} in ${result.moves} moves.${bestLabel}`;
+    dailyResult.hidden = false;
+  }
+
+  async function copyDailyResult() {
+    const text = dailyResultSummary.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      status.textContent = 'Daily challenge result copied.';
+    } catch (error) {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.setAttribute('readonly', '');
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.append(textArea);
+      textArea.select();
+      const copied = document.execCommand('copy');
+      textArea.remove();
+      status.textContent = copied ? 'Daily challenge result copied.' : 'Could not copy the result. Select it to share.';
+    }
+  }
+
   function rotateVector(vector, axis) {
     const perpendicular = cross(axis, vector);
     const parallel = dot(vector, axis);
@@ -291,6 +331,7 @@
     initialize();
     history = [];
     const dateKey = getLocalDateKey();
+    dailyResult.hidden = true;
     status.textContent = `Starting the ${dateKey} daily challenge…`;
     startDailyResult(dateKey);
     dailyChallengePreparing = true;
@@ -304,12 +345,15 @@
     status.textContent = 'Solving…';
     const solution = [...history].reverse().map(inverse);
     await runSequence(solution, false);
-    completeDailyResult(dailyChallengeDateKey);
+    const challengeDateKey = dailyChallengeDateKey;
+    completeDailyResult(challengeDateKey);
+    renderDailyResult(challengeDateKey);
     history = [];
     updateCubeLabel();
     solveButton.disabled = true;
     status.textContent = 'Solved — every face is back in place.';
   });
+  dailyShareButton.addEventListener('click', copyDailyResult);
 
   tutorToggle.addEventListener('click', () => {
     const opening = tutor.hidden;
