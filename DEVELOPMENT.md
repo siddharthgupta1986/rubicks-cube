@@ -42,5 +42,6 @@
 - Input compatibility checks: use lowercase and uppercase keyboard turns, undo, focused form controls, Shuffle, Solve, Guided solve, Missions, Speedrun, and a connected/disconnected gamepad where available.
 - Camera compatibility checks: apply every preset, drag afterward, use arrow keys, inspect all six faces, switch themes, and verify a 320px viewport has no clipping or horizontal scroll.
 - Camera presets must never change sticker serialization or move history; compare exported state before and after each view action.
+- Feedback compatibility checks: toggle vibration on supported and unsupported devices, verify reduced-motion defaults it off, and confirm rapid sequences do not issue vibration calls more often than the throttle allows.
 - The HTML parser and JavaScript syntax checks pass.
 - Documentation is updated if the public behavior or file layout changes.
