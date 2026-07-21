@@ -36,6 +36,14 @@
   const algorithmsClose = document.getElementById('algorithms-close');
   const algorithmCategory = document.getElementById('algorithm-category');
   const algorithmList = document.getElementById('algorithm-list');
+  const stateToggle = document.getElementById('state-toggle');
+  const stateTools = document.getElementById('state-tools');
+  const stateClose = document.getElementById('state-close');
+  const stateExport = document.getElementById('state-export');
+  const stateCopy = document.getElementById('state-copy');
+  const stateInput = document.getElementById('state-input');
+  const stateImport = document.getElementById('state-import');
+  const stateReset = document.getElementById('state-reset');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -1061,6 +1069,43 @@
   algorithmCategory.addEventListener('change', event => {
     selectedAlgorithmCategory = event.target.value;
     renderAlgorithms();
+  });
+  stateToggle.addEventListener('click', () => {
+    stateTools.hidden = false;
+    stateToggle.setAttribute('aria-expanded', 'true');
+    stateInput.value = serializeCubeState();
+    status.textContent = 'Cube state tools opened.';
+  });
+  stateClose.addEventListener('click', () => {
+    stateTools.hidden = true;
+    stateToggle.setAttribute('aria-expanded', 'false');
+    status.textContent = 'Cube state tools closed.';
+  });
+  stateExport.addEventListener('click', () => {
+    stateInput.value = serializeCubeState();
+    status.textContent = 'Current cube state exported below.';
+  });
+  stateCopy.addEventListener('click', async () => {
+    try {
+      await copyText(serializeCubeState());
+      status.textContent = 'Cube state copied.';
+    } catch (error) {
+      status.textContent = 'Could not copy cube state.';
+    }
+  });
+  stateImport.addEventListener('click', () => {
+    try {
+      importCubeState(stateInput.value);
+      status.textContent = 'Cube state imported.';
+    } catch (error) {
+      status.textContent = `Import failed: ${error.message}`;
+    }
+  });
+  stateReset.addEventListener('click', () => {
+    initialize();
+    history = [];
+    stateInput.value = serializeCubeState();
+    status.textContent = 'Cube reset to solved state.';
   });
   algorithmList.addEventListener('click', async event => {
     const button = event.target.closest('button[data-algorithm]');
