@@ -699,6 +699,18 @@
     }
   }
 
+  async function playReplay(replay, record = false) {
+    if (!isReplay(replay)) throw new Error('Cannot play an invalid replay.');
+    await runSequence(replay.moves, record);
+  }
+
+  function stepReplay(replay, index, record = false) {
+    if (!isReplay(replay)) throw new Error('Cannot step through an invalid replay.');
+    if (!Number.isInteger(index) || index < 0 || index >= replay.moves.length) return index;
+    turn(replay.moves[index], record);
+    return index + 1;
+  }
+
   function shuffleMoves(length = 24) {
     const names = Object.keys(faces);
     const moves = [];
@@ -863,5 +875,5 @@
     getLocalDateKey,
     dailyScrambleMoves: (date, length) => dailyScrambleMoves(date, length).slice()
   });
-  window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, version: replayVersion });
+  window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, play: playReplay, step: stepReplay, version: replayVersion });
 })();
