@@ -17,9 +17,24 @@
       <div class="actions" aria-label="Puzzle actions">
         <button class="button button-primary" type="button" id="shuffle">Shuffle</button>
         <button class="button" type="button" id="daily-challenge">Daily challenge</button>
+        <button class="button" type="button" id="speedrun-toggle" aria-expanded="false" aria-controls="speedrun">Speedrun</button>
         <button class="button" type="button" id="solve" disabled>Solve</button>
         <button class="button" type="button" id="tutor-toggle" aria-expanded="false" aria-controls="tutor">Guided solve</button>
       </div>
+
+      <section class="speedrun" id="speedrun" hidden aria-labelledby="speedrun-title">
+        <div class="speedrun-heading">
+          <div>
+            <p class="eyebrow">Timed practice</p>
+            <h2 id="speedrun-title">Speedrun</h2>
+          </div>
+          <p class="speedrun-time" id="speedrun-time" role="timer" aria-live="off">0:00.00</p>
+        </div>
+        <div class="speedrun-actions">
+          <button class="button-primary" type="button" id="speedrun-start">Start speedrun</button>
+          <button type="button" id="speedrun-reset">Reset timer</button>
+        </div>
+      </section>
 
       <fieldset class="turns" id="turn-controls">
         <legend>Turn a face</legend>
