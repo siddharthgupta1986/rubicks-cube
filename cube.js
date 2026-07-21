@@ -773,6 +773,15 @@
     renderMissions();
   }
 
+  function undoLastMove() {
+    if (busy || !history.length) return false;
+    const move = history.pop();
+    turn(inverse(move), false);
+    solveButton.disabled = history.length === 0;
+    status.textContent = `Undid ${move}.`;
+    return true;
+  }
+
   function checkActiveMission() {
     if (!activeMission || missionPreparing) return;
     const mission = missionData.find(item => item.id === activeMission);
@@ -1033,6 +1042,23 @@
     turn(button.dataset.move);
     solveButton.disabled = false;
     status.textContent = `${button.dataset.move} turn applied.`;
+    announceGuidedProgress();
+    if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
+  });
+
+  document.addEventListener('keydown', event => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return;
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') {
+      if (undoLastMove()) event.preventDefault();
+      return;
+    }
+    const move = keyboardShortcuts[event.key];
+    if (!move || busy) return;
+    event.preventDefault();
+    turn(move);
+    solveButton.disabled = false;
+    status.textContent = `${move} turn applied from the keyboard.`;
     announceGuidedProgress();
     if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
   });
