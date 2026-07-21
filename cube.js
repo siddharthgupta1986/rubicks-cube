@@ -241,6 +241,76 @@
     return false;
   }
 
+  function expectedColor(normal) {
+    return Object.values(faces).find(face => face.n.every((value, index) => value === normal[index])).color;
+  }
+
+  function isSolvedAtPosition(sticker) {
+    return sticker.color === expectedColor(sticker.normal);
+  }
+
+  function isSolvedState() {
+    return stickers.every(isSolvedAtPosition);
+  }
+
+  function isWhiteCrossComplete() {
+    return stickers.filter(sticker => sticker.normal[1] === 1 && (sticker.position[0] === 0 || sticker.position[2] === 0))
+      .every(isSolvedAtPosition);
+  }
+
+  function isFirstLayerComplete() {
+    return stickers.filter(sticker => sticker.position[1] === 1).every(isSolvedAtPosition);
+  }
+
+  function isMiddleLayerComplete() {
+    return stickers.filter(sticker => sticker.position[1] === 0 && sticker.normal[1] === 0).every(isSolvedAtPosition);
+  }
+
+  function isYellowCrossComplete() {
+    return stickers.filter(sticker => sticker.normal[1] === -1 && (sticker.position[0] === 0 || sticker.position[2] === 0))
+      .every(sticker => sticker.color === 'yellow');
+  }
+
+  function isYellowCornersOriented() {
+    return stickers.filter(sticker => sticker.normal[1] === -1 && sticker.position[0] !== 0 && sticker.position[2] !== 0)
+      .every(sticker => sticker.color === 'yellow');
+  }
+
+  function isYellowCornersPlaced() {
+    const positions = new Set(stickers
+      .filter(sticker => sticker.position[1] === -1 && sticker.position[0] !== 0 && sticker.position[2] !== 0)
+      .map(sticker => sticker.position.join(',')));
+    return [...positions].every(positionKey => {
+      const position = positionKey.split(',').map(Number);
+      const currentColors = new Set(stickers
+        .filter(sticker => sticker.position.every((value, index) => value === position[index]))
+        .map(sticker => sticker.color));
+      const expectedColors = new Set(stickers
+        .filter(sticker => sticker.position.every((value, index) => value === position[index]))
+        .map(sticker => expectedColor(sticker.normal)));
+      return currentColors.size === expectedColors.size && [...expectedColors].every(color => currentColors.has(color));
+    });
+  }
+
+  const guidedChecks = {
+    orientation: () => false,
+    whiteCross: isWhiteCrossComplete,
+    firstLayer: isFirstLayerComplete,
+    middleLayer: isMiddleLayerComplete,
+    yellowCross: isYellowCrossComplete,
+    yellowCornersPlaced: isYellowCornersPlaced,
+    yellowCornersOriented: isYellowCornersOriented,
+    solved: isSolvedState
+  };
+
+  function isGuidedStageComplete() {
+    return guidedChecks[lessons[tutorStep].success]();
+  }
+
+  function announceGuidedProgress() {
+    if (!tutor.hidden && isGuidedStageComplete()) status.textContent = `Goal complete: ${lessons[tutorStep].title}. Move to the next step.`;
+  }
+
   function render() {
     const locations = new Map(stickers.map(sticker => [key(sticker.position, sticker.normal), sticker]));
     faceElements.forEach(element => {
@@ -342,6 +412,7 @@
     turn(button.dataset.move);
     solveButton.disabled = false;
     status.textContent = `${button.dataset.move} turn applied.`;
+    announceGuidedProgress();
   });
 
   shuffleButton.addEventListener('click', async () => {
@@ -413,6 +484,7 @@
     status.textContent = `Practising ${lesson.moves.join(' ')}…`;
     await runSequence(lesson.moves, true);
     status.textContent = 'Practice move applied. Use Solve any time to undo your practice.';
+    announceGuidedProgress();
   });
 
   viewport.addEventListener('pointerdown', event => {
