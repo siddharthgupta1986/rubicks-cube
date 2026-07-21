@@ -18,6 +18,7 @@
   const speedrunTime = document.getElementById('speedrun-time');
   const speedrunStart = document.getElementById('speedrun-start');
   const speedrunReset = document.getElementById('speedrun-reset');
+  const speedrunInspection = document.getElementById('speedrun-inspection');
   const dailyResult = document.getElementById('daily-result');
   const dailyResultSummary = document.getElementById('daily-result-summary');
   const dailyShareButton = document.getElementById('daily-share');
@@ -51,6 +52,8 @@
   let speedrunState = 'idle';
   let speedrunStartedAt = 0;
   let speedrunTimerId = 0;
+  let speedrunInspectionId = 0;
+  let speedrunInspectionEndsAt = 0;
   let rotation = { x: -28, y: 36 };
   let pointer = null;
   let tutorStep = 0;
@@ -203,27 +206,54 @@
   function stopSpeedrunTimer() {
     if (speedrunTimerId) window.clearInterval(speedrunTimerId);
     speedrunTimerId = 0;
+    if (speedrunInspectionId) window.clearInterval(speedrunInspectionId);
+    speedrunInspectionId = 0;
   }
 
   function setSpeedrunState(state) {
     speedrunState = state;
     speedrunStart.disabled = busy || state === 'scrambling' || state === 'running';
     speedrunReset.disabled = busy;
-    speedrunStart.textContent = state === 'running' ? 'Running…' : 'Start speedrun';
+    speedrunStart.textContent = state === 'running' ? 'Running…' : state === 'inspecting' ? 'Skip inspection' : 'Start speedrun';
   }
 
-  async function startSpeedrun() {
-    if (busy || speedrunState === 'running') return;
-    initialize();
-    history = [];
-    setSpeedrunState('scrambling');
-    status.textContent = 'Preparing your speedrun scramble…';
-    await runSequence(shuffleMoves(), true);
+  function beginTimedSpeedrun() {
     speedrunStartedAt = performance.now();
     renderSpeedrunTimer();
     speedrunTimerId = window.setInterval(renderSpeedrunTimer, 50);
     setSpeedrunState('running');
     status.textContent = 'Speedrun started. Solve the cube as quickly as you can.';
+  }
+
+  function beginInspection() {
+    setSpeedrunState('inspecting');
+    speedrunInspectionEndsAt = performance.now() + 15000;
+    speedrunTime.textContent = 'Inspection: 15';
+    speedrunInspectionId = window.setInterval(() => {
+      const remaining = Math.ceil(Math.max(0, speedrunInspectionEndsAt - performance.now()) / 1000);
+      speedrunTime.textContent = `Inspection: ${remaining}`;
+      if (remaining <= 0) {
+        stopSpeedrunTimer();
+        beginTimedSpeedrun();
+      }
+    }, 100);
+    status.textContent = 'Inspection started. Study the scramble, then skip or wait.';
+  }
+
+  async function startSpeedrun() {
+    if (busy || speedrunState === 'running') return;
+    if (speedrunState === 'inspecting') {
+      stopSpeedrunTimer();
+      beginTimedSpeedrun();
+      return;
+    }
+    initialize();
+    history = [];
+    setSpeedrunState('scrambling');
+    status.textContent = 'Preparing your speedrun scramble…';
+    await runSequence(shuffleMoves(), true);
+    if (speedrunInspection.checked && !reducedMotion) beginInspection();
+    else beginTimedSpeedrun();
   }
 
   function resetSpeedrun() {
