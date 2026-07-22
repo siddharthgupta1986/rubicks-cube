@@ -112,6 +112,10 @@
   const academyProgressBar = document.getElementById('academy-progress-bar');
   const academyScreen = document.getElementById('academy-screen');
   const academyNavButtons = [...document.querySelectorAll('[data-academy-screen]')];
+  const academyHud = document.getElementById('academy-hud');
+  const academyHudTitle = document.getElementById('academy-hud-title');
+  const academyHudStatus = document.getElementById('academy-hud-status');
+  const academyExit = document.getElementById('academy-exit');
   const faceElements = [...document.querySelectorAll('[data-face]')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
@@ -1228,6 +1232,8 @@
     }));
     tutorMoves.hidden = lesson.moves.length === 0;
     tutorDemo.hidden = lesson.moves.length === 0;
+    academyHudTitle.textContent = lesson.title;
+    academyHudStatus.textContent = lesson.goal;
     tutorPrevious.disabled = tutorStep === 0;
     tutorNext.textContent = tutorStep === lessons.length - 1 ? 'Start again' : 'Next step';
     render();
@@ -1355,6 +1361,7 @@
   function startAcademyTraining() {
     academyDeck.hidden = true;
     academyScreen.hidden = true;
+    academyHud.hidden = false;
     tutor.hidden = false;
     controls.hidden = false;
     tutorToggle.setAttribute('aria-expanded', 'true');
@@ -1362,6 +1369,17 @@
     renderTutor();
     status.textContent = 'Journey started. Follow one goal at a time.';
     tutor.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function exitAcademyTraining() {
+    academyHud.hidden = true;
+    tutor.hidden = true;
+    controls.hidden = true;
+    tutorToggle.setAttribute('aria-expanded', 'false');
+    tutorToggle.textContent = 'Guided solve';
+    academyDeck.hidden = false;
+    academyScreen.hidden = false;
+    status.textContent = 'Session paused. Your Academy progress is saved.';
   }
 
   function handleAcademyAction(action) {
@@ -1920,6 +1938,7 @@
     if (action === 'practice' || action === 'vault') setAcademyScreen(action);
     else handleAcademyAction(action);
   });
+  academyExit.addEventListener('click', exitAcademyTraining);
   academyScreen.addEventListener('click', event => {
     const button = event.target.closest('[data-academy-action]');
     if (button) handleAcademyAction(button.dataset.academyAction);

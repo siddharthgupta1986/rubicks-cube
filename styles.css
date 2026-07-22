@@ -87,6 +87,10 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .tutor .eyebrow { margin: 0 0 7px; }.tutor h2 { margin: 0; font-size: 1.25rem; letter-spacing: -.025em; }.tutor > p:not(.eyebrow) { margin: 11px 0 0; color: var(--muted); line-height: 1.52; }.tutor-tip { color: var(--ink) !important; font-size: .92rem; }.notation { display: flex; flex-wrap: wrap; gap: 6px; min-height: 0; margin-top: 14px; }.move-chip { padding: 4px 8px; border: 1px solid rgba(145, 204, 255, .35); border-radius: 6px; color: #c8e8ff; background: rgba(145, 204, 255, .08); font: 700 .85rem ui-monospace, SFMono-Regular, Menlo, monospace; }.tutor-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 17px; }.tutor-actions .button-primary { margin-left: auto; }
 .tutor-goal { color: var(--ink) !important; font-weight: 700; }.tutor-orientation { color: #c8e8ff !important; font-size: .92rem; }
 .cube-panel { display: grid; place-items: center; min-width: 0; }
+.academy-hud { width: min(100%, 450px); display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 14px; padding: 14px 16px; border: 1px solid #f2c36b; border-radius: 12px; background: #fff7df; }
+.academy-hud h2 { margin: 0; font-size: 1rem; }
+.academy-hud p:not(.eyebrow) { margin: 5px 0 0; color: var(--muted); font-size: .82rem; }
+.academy-hud button { min-height: 32px; padding: 0 10px; font-size: .77rem; white-space: nowrap; }
 .drag-tip { margin: 0 0 13px; color: var(--muted); font-size: .82rem; }
 .cube-viewport { width: min(100%, 450px); aspect-ratio: 1 / .88; display: grid; place-items: center; perspective: 1050px; cursor: grab; touch-action: none; user-select: none; }
 .cube-viewport.is-dragging { cursor: grabbing; }
