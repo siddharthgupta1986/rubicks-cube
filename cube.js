@@ -124,6 +124,7 @@
   const achievementStorageKey = 'rubiks-cube.achievements.v1';
   const feedbackStorageKey = 'rubiks-cube.feedback.v1';
   const twoPlayerHistoryStorageKey = 'rubiks-cube.two-player-history.v1';
+  const academyStorageKey = 'rubiks-cube.academy.v1';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -184,6 +185,8 @@
   let twoPlayerTimerId = 0;
   let twoPlayerHistory = [];
   let tutorStep = 0;
+  let academyProgressState = { version: 1, completed: [], lastViewed: 0 };
+  const academyChapterTitles = ['Orientation', 'White cross', 'First layer', 'Middle layer', 'Yellow cross', 'Final solve'];
   let academyScreenState = 'journey';
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
@@ -220,6 +223,12 @@
   ];
 
   const key = (p, n) => `${p.join(',')}|${n.join(',')}`;
+  const canonicalStickerKeys = new Set();
+  Object.values(faces).forEach(definition => {
+    for (let row = 0; row < 3; row += 1) for (let col = 0; col < 3; col += 1) {
+      canonicalStickerKeys.add(key(definition.location(row, col), definition.n));
+    }
+  });
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
   function parseMove(move) {
@@ -302,9 +311,10 @@
       if (!Array.isArray(sticker.position) || sticker.position.length !== 3 || !sticker.position.every(value => [-1, 0, 1].includes(value))) throw new Error('Cube state contains an invalid position.');
       if (!Array.isArray(sticker.normal) || sticker.normal.length !== 3 || sticker.normal.filter(value => value !== 0).length !== 1 || !sticker.normal.some(value => Math.abs(value) === 1)) throw new Error('Cube state contains an invalid normal.');
       if (!['white', 'yellow', 'red', 'orange', 'blue', 'green'].includes(sticker.color)) throw new Error('Cube state contains an invalid color.');
-      const key = `${sticker.position}|${sticker.normal}`;
-      if (positions.has(key)) throw new Error('Cube state contains duplicate stickers.');
-      positions.add(key);
+      const stickerKey = key(sticker.position, sticker.normal);
+      if (!canonicalStickerKeys.has(stickerKey)) throw new Error('Cube state contains a sticker outside the canonical cube layout.');
+      if (positions.has(stickerKey)) throw new Error('Cube state contains duplicate stickers.');
+      positions.add(stickerKey);
       colors[sticker.color] = (colors[sticker.color] || 0) + 1;
     });
     if (Object.values(colors).some(count => count !== 9)) throw new Error('Cube state must contain nine stickers of each color.');
@@ -1124,7 +1134,16 @@
   }
 
   function announceGuidedProgress() {
-    if (!tutor.hidden && isGuidedStageComplete()) status.textContent = `Goal complete: ${lessons[tutorStep].title}. Move to the next step.`;
+    if (!tutor.hidden && isGuidedStageComplete()) {
+      const chapter = Math.min(tutorStep, academyChapterTitles.length - 1);
+      if (!academyProgressState.completed.includes(chapter)) {
+        academyProgressState.completed.push(chapter);
+        academyProgressState.completed.sort((a, b) => a - b);
+        saveAcademyProgress();
+        renderAcademyDeck();
+      }
+      status.textContent = `Goal complete: ${lessons[tutorStep].title}. Move to the next step.`;
+    }
   }
 
   function render() {
@@ -1251,6 +1270,36 @@
     }
   });
 
+  function loadAcademyProgress() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(academyStorageKey) || 'null');
+      if (saved && saved.version === 1 && Array.isArray(saved.completed)) {
+        return { version: 1, completed: saved.completed.filter(chapter => Number.isInteger(chapter) && chapter >= 0 && chapter < academyChapterTitles.length), lastViewed: Number.isInteger(saved.lastViewed) ? saved.lastViewed : 0 };
+      }
+    } catch (error) {
+      // Local storage is optional; an unavailable store should not block play.
+    }
+    return { version: 1, completed: [], lastViewed: 0 };
+  }
+
+  function saveAcademyProgress() {
+    try { localStorage.setItem(academyStorageKey, JSON.stringify(academyProgressState)); } catch (error) { /* optional */ }
+  }
+
+  function renderAcademyDeck() {
+    const completed = academyProgressState.completed.length;
+    const nextChapter = Math.min(completed, academyChapterTitles.length - 1);
+    const isComplete = completed >= academyChapterTitles.length;
+    academyDeckTitle.textContent = isComplete ? 'Academy complete' : academyChapterTitles[nextChapter];
+    academyDeckDescription.textContent = isComplete ? 'You have cleared the core path. Keep your edge in Practice.' : `Chapter ${nextChapter + 1}: ${academyScreens.journey.cards[0].description}`;
+    academyContinue.textContent = isComplete ? 'Enter practice' : 'Continue training';
+    academyContinue.dataset.academyAction = isComplete ? 'practice' : 'continue';
+    academyRank.textContent = completed >= 5 ? 'Solver' : completed >= 3 ? 'Apprentice' : completed >= 1 ? 'Learner' : 'Initiate';
+    academyProgressBar.style.width = `${Math.max(8, Math.round((completed / academyChapterTitles.length) * 100))}%`;
+    const label = academyDeck.querySelector('.academy-progress-label');
+    if (label) label.textContent = isComplete ? 'Core path cleared' : `Chapter ${nextChapter + 1} of ${academyChapterTitles.length}`;
+  }
+
   function makeAcademyButton(label, action, primary = false) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -1275,9 +1324,10 @@
     description.textContent = screen.description;
     heading.append(eyebrow, title, description);
 
-    const cards = document.createElement('div');
-    cards.className = 'academy-card-grid';
-    screen.cards.forEach(cardData => {
+    const cardGrid = document.createElement('div');
+    cardGrid.className = 'academy-card-grid';
+    const cardDataList = academyScreenState === 'journey' ? [{ ...screen.cards[0], title: academyChapterTitles[Math.min(academyProgressState.completed.length, academyChapterTitles.length - 1)] }] : screen.cards;
+    cardDataList.forEach(cardData => {
       const card = document.createElement('article');
       card.className = 'academy-card';
       const cardTitle = document.createElement('h3');
@@ -1288,9 +1338,9 @@
       actions.className = 'academy-card-actions';
       actions.append(makeAcademyButton(cardData.label, cardData.action, cardData.action === 'continue'));
       card.append(cardTitle, cardDescription, actions);
-      cards.append(card);
+      cardGrid.append(card);
     });
-    academyScreen.append(heading, cards);
+    academyScreen.append(heading, cardGrid);
   }
 
   function openLegacyPanel(panelId, toggleId) {
@@ -1348,6 +1398,9 @@
     academyContinue.dataset.academyAction = nextScreen === 'journey' ? 'continue' : nextScreen;
     academyDeck.hidden = false;
     academyScreen.hidden = false;
+    academyProgressState.lastViewed = Math.min(academyProgressState.completed.length, academyChapterTitles.length - 1);
+    saveAcademyProgress();
+    renderAcademyDeck();
     renderAcademyScreen();
   }
 
@@ -1970,6 +2023,8 @@
   renderTwoPlayer();
   twoPlayerHistory = loadTwoPlayerHistory();
   renderTwoPlayerHistory();
+  academyProgressState = loadAcademyProgress();
+  renderAcademyDeck();
   setAcademyScreen('journey');
 
   window.RubiksCubeChallenge = Object.freeze({
