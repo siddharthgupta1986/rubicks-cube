@@ -1271,7 +1271,10 @@
         { title: 'Achievements', description: 'Collect milestones as your solving identity grows.', action: 'achievements', label: 'View achievements' },
         { title: 'Replays', description: 'Save and revisit the solves worth remembering.', action: 'replays', label: 'View replays' },
         { title: 'Cube state', description: 'Export, import, or reset a puzzle position.', action: 'state', label: 'Open state tools' },
-        { title: 'Settings', description: 'Adjust themes, feedback, camera, and input help.', action: 'settings', label: 'Open settings' }
+        { title: 'View controls', description: 'Choose a camera preset for a better angle on the cube.', action: 'camera', label: 'Open camera' },
+        { title: 'Feedback', description: 'Tune sound, vibration, and move feedback intensity.', action: 'feedback', label: 'Open feedback' },
+        { title: 'Input help', description: 'Review keyboard and controller shortcuts.', action: 'input', label: 'Open input help' },
+        { title: 'Theme', description: 'Choose the visual treatment that feels right for your session.', action: 'theme', label: 'Open theme' }
       ]
     }
   });
@@ -1394,10 +1397,10 @@
     if (action === 'state') return openLegacyPanel('state-tools', 'state-toggle');
     if (action === 'scramble') return document.querySelector('.scramble-studio').removeAttribute('hidden');
     if (action === 'two-player') return document.querySelector('.two-player').removeAttribute('hidden');
-    if (action === 'settings') {
-      document.querySelectorAll('.legacy-tool').forEach(tool => { tool.hidden = false; });
-      return;
-    }
+    if (action === 'camera') return document.querySelector('.camera-tools').removeAttribute('hidden');
+    if (action === 'feedback') return document.querySelector('.feedback-tools').removeAttribute('hidden');
+    if (action === 'input') return openLegacyPanel('input-help', 'input-toggle');
+    if (action === 'theme') return document.querySelector('.theme-control').removeAttribute('hidden');
   }
 
   function setAcademyScreen(nextScreen) {
