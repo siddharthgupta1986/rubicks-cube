@@ -1309,6 +1309,16 @@
     if (label) label.textContent = isComplete ? 'Core path cleared' : `Chapter ${nextChapter + 1} of ${academyChapterTitles.length}`;
   }
 
+  function recordAcademySolve() {
+    const finalChapter = academyChapterTitles.length - 1;
+    if (!academyProgressState.completed.includes(finalChapter)) {
+      academyProgressState.completed.push(finalChapter);
+      academyProgressState.completed.sort((a, b) => a - b);
+      saveAcademyProgress();
+      renderAcademyDeck();
+    }
+  }
+
   function makeAcademyButton(label, action, primary = false) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -1898,6 +1908,7 @@
     status.textContent = 'Solved — every face is back in place.';
     celebrateSolved();
     recordProgressEvent('solved', 'cube');
+    recordAcademySolve();
     checkActiveMission();
   });
   dailyShareButton.addEventListener('click', copyDailyResult);
