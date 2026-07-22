@@ -333,6 +333,7 @@
     } catch (error) {
       throw new Error(error.message || 'Cube state is invalid.');
     }
+    clearChallengeState();
     stickers = snapshot.stickers.map(sticker => ({ position: sticker.position.slice(), normal: sticker.normal.slice(), color: sticker.color }));
     history = [];
     render();
@@ -883,8 +884,8 @@
       beginTimedSpeedrun();
       return;
     }
+    clearChallengeState('speedrun');
     initialize();
-    cancelMission();
     history = [];
     speedrunMoveCount = 0;
     speedrunMoves.textContent = 'Moves: 0';
@@ -958,6 +959,7 @@
     if (busy) return;
     const mission = missionData.find(item => item.id === id);
     if (!mission) return;
+    clearChallengeState('mission');
     activeMission = mission.id;
     hideCelebration();
     initialize();
@@ -974,6 +976,20 @@
     activeMission = null;
     missionPreparing = false;
     renderMissions();
+  }
+
+  function clearChallengeState(preserve = '') {
+    if (preserve !== 'speedrun' && speedrunState !== 'idle') resetSpeedrun();
+    if (preserve !== 'daily') {
+      dailyChallengeActive = false;
+      dailyChallengePreparing = false;
+      dailyChallengeDateKey = '';
+    }
+    if (preserve !== 'mission') cancelMission();
+    if (preserve !== 'two-player' && twoPlayerState.phase !== 'idle') {
+      resetTwoPlayerState();
+      renderTwoPlayer();
+    }
   }
 
   function undoLastMove() {
@@ -1622,10 +1638,7 @@
 
   shuffleButton.addEventListener('click', async () => {
     if (busy) return;
-    cancelMission();
-    dailyChallengeActive = false;
-    dailyChallengePreparing = false;
-    dailyChallengeDateKey = '';
+    clearChallengeState();
     history = [];
     hideCelebration();
     initialize();
@@ -1636,7 +1649,7 @@
 
   dailyChallengeButton.addEventListener('click', async () => {
     if (busy) return;
-    cancelMission();
+    clearChallengeState('daily');
     initialize();
     history = [];
     hideCelebration();
@@ -1697,6 +1710,7 @@
     const replay = replayRecords[Number(button.dataset.replayIndex)];
     if (!replay) return;
     if (button.dataset.replayAction === 'play') {
+      clearChallengeState('replay');
       initialize();
       history = [];
       status.textContent = 'Playing replay…';
@@ -1764,6 +1778,7 @@
     }
   });
   stateReset.addEventListener('click', () => {
+    clearChallengeState();
     initialize();
     history = [];
     stateInput.value = serializeCubeState();
@@ -1998,6 +2013,7 @@
     }
   });
   twoPlayerStart.addEventListener('click', () => {
+    clearChallengeState('two-player');
     history = [];
     initialize();
     startTwoPlayerRound([playerOneName.value, playerTwoName.value]);
