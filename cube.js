@@ -104,6 +104,14 @@
   const tutorPrevious = document.getElementById('tutor-prev');
   const tutorNext = document.getElementById('tutor-next');
   const tutorDemo = document.getElementById('tutor-demo');
+  const academyDeck = document.getElementById('academy-deck');
+  const academyDeckTitle = document.getElementById('academy-deck-title');
+  const academyDeckDescription = document.getElementById('academy-deck-description');
+  const academyContinue = document.getElementById('academy-continue');
+  const academyRank = document.getElementById('academy-rank');
+  const academyProgressBar = document.getElementById('academy-progress-bar');
+  const academyScreen = document.getElementById('academy-screen');
+  const academyNavButtons = [...document.querySelectorAll('[data-academy-screen]')];
   const faceElements = [...document.querySelectorAll('[data-face]')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dailyStorageKey = 'rubiks-cube.daily-challenge.v1';
@@ -176,6 +184,7 @@
   let twoPlayerTimerId = 0;
   let twoPlayerHistory = [];
   let tutorStep = 0;
+  let academyScreenState = 'journey';
   const lessonDrafts = [
     { title: 'Meet your cube', body: 'The six center stickers never move, so they name each face. Hold white on top and green facing you. A solved cube has each face matching its center.', tip: 'Notation: U, R, F, D, L, and B mean turn the Up, Right, Front, Down, Left, or Back face clockwise. An apostrophe means turn it counter-clockwise.', moves: [] },
     { title: 'Make the white cross', body: 'Find the four white edge pieces (they have two colors). Move each beside the matching side-center, then turn that face twice to bring the white sticker to the top. Keep the side color matched before each double turn.', tip: 'Do not worry about white corners yet. The goal is a white plus sign with all four side colors matching their centers.', moves: ['F2', 'R2', 'L2', 'B2'] },
@@ -1205,6 +1214,143 @@
     render();
   }
 
+  const academyScreens = Object.freeze({
+    journey: {
+      label: 'Journey',
+      eyebrow: 'Your campaign',
+      title: 'Follow the solve',
+      description: 'Six focused chapters turn cube knowledge into muscle memory.',
+      cards: [{ title: 'Orientation', description: 'Meet the cube, learn its language, and make your first confident turn.', action: 'continue', label: 'Continue training' }]
+    },
+    practice: {
+      label: 'Practice',
+      eyebrow: 'Training room',
+      title: 'Choose your arena',
+      description: 'Short sessions for building speed, accuracy, and confidence.',
+      cards: [
+        { title: 'Daily challenge', description: 'A fresh scramble to solve today.', action: 'daily', label: 'Start challenge' },
+        { title: 'Speedrun', description: 'Race the clock and build a personal record.', action: 'speedrun', label: 'Open speedrun' },
+        { title: 'Missions', description: 'Complete compact goals that reward deliberate practice.', action: 'missions', label: 'Open missions' },
+        { title: 'Algorithms', description: 'Study useful patterns and practise their notation.', action: 'algorithms', label: 'Open algorithms' },
+        { title: 'Scramble studio', description: 'Design a setup with your own length, seed, and face rules.', action: 'scramble', label: 'Open studio' },
+        { title: 'Pass and play', description: 'Take turns solving with someone beside you.', action: 'two-player', label: 'Open match' }
+      ]
+    },
+    vault: {
+      label: 'Vault',
+      eyebrow: 'Your records',
+      title: 'Keep your progress close',
+      description: 'Review your history, tune the experience, and pick up where you left off.',
+      cards: [
+        { title: 'Progress', description: 'See your training rhythm across the calendar.', action: 'progress', label: 'View progress' },
+        { title: 'Achievements', description: 'Collect milestones as your solving identity grows.', action: 'achievements', label: 'View achievements' },
+        { title: 'Replays', description: 'Save and revisit the solves worth remembering.', action: 'replays', label: 'View replays' },
+        { title: 'Cube state', description: 'Export, import, or reset a puzzle position.', action: 'state', label: 'Open state tools' },
+        { title: 'Settings', description: 'Adjust themes, feedback, camera, and input help.', action: 'settings', label: 'Open settings' }
+      ]
+    }
+  });
+
+  function makeAcademyButton(label, action, primary = false) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = primary ? 'button-primary' : '';
+    button.dataset.academyAction = action;
+    button.textContent = label;
+    return button;
+  }
+
+  function renderAcademyScreen() {
+    const screen = academyScreens[academyScreenState];
+    academyScreen.replaceChildren();
+    const heading = document.createElement('div');
+    heading.className = 'academy-screen-heading';
+    const eyebrow = document.createElement('p');
+    eyebrow.className = 'eyebrow';
+    eyebrow.textContent = screen.eyebrow;
+    const title = document.createElement('h2');
+    title.id = 'academy-screen-title';
+    title.textContent = screen.title;
+    const description = document.createElement('p');
+    description.textContent = screen.description;
+    heading.append(eyebrow, title, description);
+
+    const cards = document.createElement('div');
+    cards.className = 'academy-card-grid';
+    screen.cards.forEach(cardData => {
+      const card = document.createElement('article');
+      card.className = 'academy-card';
+      const cardTitle = document.createElement('h3');
+      cardTitle.textContent = cardData.title;
+      const cardDescription = document.createElement('p');
+      cardDescription.textContent = cardData.description;
+      const actions = document.createElement('div');
+      actions.className = 'academy-card-actions';
+      actions.append(makeAcademyButton(cardData.label, cardData.action, cardData.action === 'continue'));
+      card.append(cardTitle, cardDescription, actions);
+      cards.append(card);
+    });
+    academyScreen.append(heading, cards);
+  }
+
+  function openLegacyPanel(panelId, toggleId) {
+    const panel = document.getElementById(panelId);
+    const toggle = document.getElementById(toggleId);
+    if (!panel) return;
+    panel.hidden = false;
+    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function startAcademyTraining() {
+    academyDeck.hidden = true;
+    academyScreen.hidden = true;
+    tutor.hidden = false;
+    controls.hidden = false;
+    tutorToggle.setAttribute('aria-expanded', 'true');
+    tutorToggle.textContent = 'Close guided solve';
+    renderTutor();
+    status.textContent = 'Journey started. Follow one goal at a time.';
+    tutor.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'nearest' });
+  }
+
+  function handleAcademyAction(action) {
+    if (action === 'continue') return startAcademyTraining();
+    if (action === 'daily') return dailyChallengeButton.click();
+    if (action === 'speedrun') return openLegacyPanel('speedrun', 'speedrun-toggle');
+    if (action === 'missions') return openLegacyPanel('missions', 'missions-toggle');
+    if (action === 'algorithms') return openLegacyPanel('algorithms', 'algorithms-toggle');
+    if (action === 'replays') return openLegacyPanel('replays', 'replays-toggle');
+    if (action === 'progress') return openLegacyPanel('progress', 'progress-toggle');
+    if (action === 'achievements') return openLegacyPanel('achievements', 'achievements-toggle');
+    if (action === 'state') return openLegacyPanel('state-tools', 'state-toggle');
+    if (action === 'scramble') return document.querySelector('.scramble-studio').removeAttribute('hidden');
+    if (action === 'two-player') return document.querySelector('.two-player').removeAttribute('hidden');
+    if (action === 'settings') {
+      document.querySelectorAll('.legacy-tool').forEach(tool => { tool.hidden = false; });
+      return;
+    }
+  }
+
+  function setAcademyScreen(nextScreen) {
+    if (!academyScreens[nextScreen]) return;
+    academyScreenState = nextScreen;
+    academyNavButtons.forEach(button => {
+      const active = button.dataset.academyScreen === nextScreen;
+      button.classList.toggle('is-active', active);
+      if (active) button.setAttribute('aria-current', 'page');
+      else button.removeAttribute('aria-current');
+    });
+    const screen = academyScreens[nextScreen];
+    academyDeckTitle.textContent = nextScreen === 'journey' ? 'Orientation' : screen.title;
+    academyDeckDescription.textContent = nextScreen === 'journey' ? screen.cards[0].description : screen.description;
+    academyContinue.textContent = nextScreen === 'journey' ? 'Continue training' : `Open ${screen.label.toLowerCase()}`;
+    academyContinue.dataset.academyAction = nextScreen === 'journey' ? 'continue' : nextScreen;
+    academyDeck.hidden = false;
+    academyScreen.hidden = false;
+    renderAcademyScreen();
+  }
+
   function setBusy(value) {
     busy = value;
     shuffleButton.disabled = value;
@@ -1713,6 +1859,19 @@
     announceGuidedProgress();
   });
 
+  academyNavButtons.forEach(button => {
+    button.addEventListener('click', () => setAcademyScreen(button.dataset.academyScreen));
+  });
+  academyContinue.addEventListener('click', () => {
+    const action = academyContinue.dataset.academyAction || 'continue';
+    if (action === 'practice' || action === 'vault') setAcademyScreen(action);
+    else handleAcademyAction(action);
+  });
+  academyScreen.addEventListener('click', event => {
+    const button = event.target.closest('[data-academy-action]');
+    if (button) handleAcademyAction(button.dataset.academyAction);
+  });
+
   viewport.addEventListener('pointerdown', event => {
     if (busy) return;
     pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, originX: rotation.x, originY: rotation.y };
@@ -1811,6 +1970,7 @@
   renderTwoPlayer();
   twoPlayerHistory = loadTwoPlayerHistory();
   renderTwoPlayerHistory();
+  setAcademyScreen('journey');
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
