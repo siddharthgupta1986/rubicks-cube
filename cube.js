@@ -1324,10 +1324,10 @@
     description.textContent = screen.description;
     heading.append(eyebrow, title, description);
 
-    const cards = document.createElement('div');
-    cards.className = 'academy-card-grid';
-    const cards = academyScreenState === 'journey' ? [{ ...screen.cards[0], title: academyChapterTitles[Math.min(academyProgressState.completed.length, academyChapterTitles.length - 1)] }] : screen.cards;
-    cards.forEach(cardData => {
+    const cardGrid = document.createElement('div');
+    cardGrid.className = 'academy-card-grid';
+    const cardDataList = academyScreenState === 'journey' ? [{ ...screen.cards[0], title: academyChapterTitles[Math.min(academyProgressState.completed.length, academyChapterTitles.length - 1)] }] : screen.cards;
+    cardDataList.forEach(cardData => {
       const card = document.createElement('article');
       card.className = 'academy-card';
       const cardTitle = document.createElement('h3');
@@ -1338,9 +1338,9 @@
       actions.className = 'academy-card-actions';
       actions.append(makeAcademyButton(cardData.label, cardData.action, cardData.action === 'continue'));
       card.append(cardTitle, cardDescription, actions);
-      cards.append(card);
+      cardGrid.append(card);
     });
-    academyScreen.append(heading, cards);
+    academyScreen.append(heading, cardGrid);
   }
 
   function openLegacyPanel(panelId, toggleId) {
