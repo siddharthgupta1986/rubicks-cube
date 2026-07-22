@@ -220,6 +220,12 @@
   ];
 
   const key = (p, n) => `${p.join(',')}|${n.join(',')}`;
+  const canonicalStickerKeys = new Set();
+  Object.values(faces).forEach(definition => {
+    for (let row = 0; row < 3; row += 1) for (let col = 0; col < 3; col += 1) {
+      canonicalStickerKeys.add(key(definition.location(row, col), definition.n));
+    }
+  });
   const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
   const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
   function parseMove(move) {
@@ -302,9 +308,10 @@
       if (!Array.isArray(sticker.position) || sticker.position.length !== 3 || !sticker.position.every(value => [-1, 0, 1].includes(value))) throw new Error('Cube state contains an invalid position.');
       if (!Array.isArray(sticker.normal) || sticker.normal.length !== 3 || sticker.normal.filter(value => value !== 0).length !== 1 || !sticker.normal.some(value => Math.abs(value) === 1)) throw new Error('Cube state contains an invalid normal.');
       if (!['white', 'yellow', 'red', 'orange', 'blue', 'green'].includes(sticker.color)) throw new Error('Cube state contains an invalid color.');
-      const key = `${sticker.position}|${sticker.normal}`;
-      if (positions.has(key)) throw new Error('Cube state contains duplicate stickers.');
-      positions.add(key);
+      const stickerKey = key(sticker.position, sticker.normal);
+      if (!canonicalStickerKeys.has(stickerKey)) throw new Error('Cube state contains a sticker outside the canonical cube layout.');
+      if (positions.has(stickerKey)) throw new Error('Cube state contains duplicate stickers.');
+      positions.add(stickerKey);
       colors[sticker.color] = (colors[sticker.color] || 0) + 1;
     });
     if (Object.values(colors).some(count => count !== 9)) throw new Error('Cube state must contain nine stickers of each color.');
