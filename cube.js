@@ -237,6 +237,30 @@
     'mirror-bridge': Object.freeze({
       orientation: 'Keep white on top and check the side color of every white edge against its center.',
       success: 'Four mirrors agree. A solid path forms across the Glass Quarter.'
+    }),
+    'lantern-rooms': Object.freeze({
+      orientation: 'Keep white on top. Bring the target white corner below its matching three-color slot.',
+      progressGoal: 1,
+      progressUnit: 'white corner placed',
+      success: 'The first lantern burns without flicker. Its light reveals the flooded stair.'
+    }),
+    'flooded-archive': Object.freeze({
+      orientation: 'Keep white on top until the whole first layer and the top side rows match their centers.',
+      progressGoal: 21,
+      progressUnit: 'first-layer stickers aligned',
+      success: 'The first layer locks. Shelves rise from the water and form a path into the Iron Depths.'
+    }),
+    gearworks: Object.freeze({
+      orientation: 'Turn the whole cube so white is on the bottom. Work with a top edge that has no yellow.',
+      progressGoal: 1,
+      progressUnit: 'middle edge placed',
+      success: 'One gear edge catches. The machine carries Aya toward the furnace controls.'
+    }),
+    'furnace-passage': Object.freeze({
+      orientation: 'Keep white on the bottom. Match each non-yellow top edge to the front center before inserting it left or right.',
+      progressGoal: 12,
+      progressUnit: 'middle-layer stickers aligned',
+      success: 'All four channels align. The furnace opens a warm passage toward the Star Tower.'
     })
   };
   const storyMapCoordinates = Object.freeze([
@@ -1339,6 +1363,12 @@
     return solvedStickerCount();
   }
 
+  function storyProgressDescription(prefix = 'Seal progress') {
+    const detail = storyEncounterContent[currentStoryEncounter().id];
+    if (!detail?.progressGoal) return `${prefix}: active`;
+    return `${prefix}: ${Math.min(storyProgressValue(), detail.progressGoal)} of ${detail.progressGoal} ${detail.progressUnit}`;
+  }
+
   function isGuidedStageComplete() {
     return guidedChecks[lessons[tutorStep].success]();
   }
@@ -1875,7 +1905,7 @@
     storyGameplayTitle.textContent = encounter.location;
     storyGameplayObjective.textContent = encounter.objective;
     storyMoveCount.textContent = 'Moves: 0';
-    storyProgressLabel.textContent = 'Seal progress: active';
+    storyProgressLabel.textContent = storyProgressDescription();
     resetStoryEncounterHud();
     storyEncounterStatus.textContent = `${encounter.location} ready. Make legal face turns to restore the seal.`;
     storyTurnControls.disabled = false;
@@ -1892,7 +1922,9 @@
       return;
     }
     const currentProgress = storyProgressValue();
-    storyProgressLabel.textContent = currentProgress > storyLastProgress ? 'Seal progress: improving' : currentProgress < storyLastProgress ? 'Seal progress: slipped' : 'Seal progress: holding';
+    const direction = currentProgress > storyLastProgress ? 'improving' : currentProgress < storyLastProgress ? 'slipped' : 'holding';
+    const detail = storyEncounterContent[currentStoryEncounter().id];
+    storyProgressLabel.textContent = detail?.progressGoal ? `${Math.min(currentProgress, detail.progressGoal)} of ${detail.progressGoal} ${detail.progressUnit} · ${direction}` : `Seal progress: ${direction}`;
     if (currentProgress < storyLastProgress) {
       storyStagnantMoves = 0;
       advanceStoryPressure('losing seal progress');
@@ -1940,7 +1972,7 @@
     history.splice(storyCheckpointIndex);
     storyPlayerMoves = 0;
     storyMoveCount.textContent = 'Moves: 0';
-    storyProgressLabel.textContent = 'Seal progress: active';
+    storyProgressLabel.textContent = storyProgressDescription();
     storyGameplay.hidden = false;
     storyFailure.hidden = true;
     resetStoryEncounterHud();
