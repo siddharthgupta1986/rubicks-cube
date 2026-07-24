@@ -18,6 +18,7 @@ Then visit `http://127.0.0.1:4173`.
 
 - A story-first opening with one primary Begin or Continue action.
 - Six illustrated sectors and twelve sequential, checkpointed encounters.
+- A continuous first-person WebGL route through Ash Gate and the Glass Quarter, with persistent doors and mechanisms for the first four seals.
 - Deterministic legal setup moves and state-based objectives that accept alternate valid solutions.
 - A five-step pursuit system, three-level hints, family-safe failure, and checkpoint retry.
 - Versioned `rubiks-cube.archive.v2` campaign progress that remains separate from legacy Story and Cube Academy data.
