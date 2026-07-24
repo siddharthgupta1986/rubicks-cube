@@ -350,6 +350,7 @@
   let storyStagnantMoves = 0;
   let storyLastProgress = 0;
   let storyHintIndex = 0;
+  let storyMenuReturnFocus = null;
   const storyPressureLabels = Object.freeze(['Distant', 'Searching', 'Closing', 'Near', 'At the Door', 'Reached']);
   const academyChapterTitles = ['Orientation', 'White cross', 'First layer', 'Middle layer', 'Yellow cross', 'Final solve'];
   let academyScreenState = 'journey';
@@ -1782,9 +1783,36 @@
     return Boolean(storyProgressState.updatedAt || storyProgressState.completedEncounterIds.length || storyProgressState.storyCompleted);
   }
 
-  function closeStoryMenu() {
+  function closeStoryMenu(returnFocus = false) {
     storyMenu.hidden = true;
     storyMenuToggle.setAttribute('aria-expanded', 'false');
+    if (returnFocus && storyMenuReturnFocus instanceof HTMLElement) storyMenuReturnFocus.focus();
+    storyMenuReturnFocus = null;
+  }
+
+  function handleStoryMenuKeydown(event) {
+    if (storyMenu.hidden) return false;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeStoryMenu(true);
+      return true;
+    }
+    if (event.key !== 'Tab') return false;
+    const focusable = [...storyMenu.querySelectorAll('button:not(:disabled)')];
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return false;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+      return true;
+    }
+    if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+      return true;
+    }
+    return false;
   }
 
   function showStoryTitle(message = '') {
@@ -1814,10 +1842,11 @@
       const state = completed ? 'completed' : index === currentIndex ? 'current' : 'ahead';
       node.className = 'story-route-node';
       node.dataset.state = state;
+      node.dataset.index = String(index + 1);
       node.style.setProperty('--map-x', storyMapCoordinates[index].x);
       node.style.setProperty('--map-y', storyMapCoordinates[index].y);
       node.setAttribute('aria-label', `${index + 1}. ${encounter.location}: ${state}`);
-      node.textContent = String(index + 1);
+      if (state === 'current') node.setAttribute('aria-current', 'step');
       storyRoute.append(node);
     });
     storyAyaMarker.style.setProperty('--aya-x', storyMapCoordinates[currentIndex].x);
@@ -2256,6 +2285,7 @@
   });
 
   document.addEventListener('keydown', event => {
+    if (handleStoryMenuKeydown(event)) return;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return;
     const cameraStep = event.shiftKey ? 20 : 10;
@@ -2626,14 +2656,16 @@
   });
   storyMenuToggle.addEventListener('click', () => {
     const opening = storyMenu.hidden;
-    storyMenu.hidden = !opening;
-    storyMenuToggle.setAttribute('aria-expanded', String(opening));
-    if (opening) storyMenuClose.focus();
+    if (!opening) {
+      closeStoryMenu(true);
+      return;
+    }
+    storyMenuReturnFocus = document.activeElement;
+    storyMenu.hidden = false;
+    storyMenuToggle.setAttribute('aria-expanded', 'true');
+    storyMenuClose.focus();
   });
-  storyMenuClose.addEventListener('click', () => {
-    closeStoryMenu();
-    storyMenuToggle.focus();
-  });
+  storyMenuClose.addEventListener('click', () => closeStoryMenu(true));
   storyFieldKit.addEventListener('click', openFieldKit);
   fieldKitExit.addEventListener('click', exitFieldKitToStory);
   storyNewGame.addEventListener('click', () => {
