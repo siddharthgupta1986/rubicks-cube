@@ -3,6 +3,34 @@
 
   const states = Object.freeze(['patrol', 'detection', 'pursuit', 'search', 'return']);
 
+  function hasLineOfSight(from, to, solids, completedIds = []) {
+    const completed = new Set(completedIds);
+    const dx = to.x - from.x;
+    const dz = to.z - from.z;
+    const blocked = solids.some(solid => {
+      if (!solid.collision || solid.maximum[1] < 1.1) return false;
+      if (solid.opensWith && completed.has(solid.opensWith)) return false;
+      let minimumTime = 0;
+      let maximumTime = 1;
+      for (const [origin, direction, minimum, maximum] of [
+        [from.x, dx, solid.minimum[0], solid.maximum[0]],
+        [from.z, dz, solid.minimum[2], solid.maximum[2]]
+      ]) {
+        if (Math.abs(direction) < .0001) {
+          if (origin < minimum || origin > maximum) return false;
+          continue;
+        }
+        const first = (minimum - origin) / direction;
+        const second = (maximum - origin) / direction;
+        minimumTime = Math.max(minimumTime, Math.min(first, second));
+        maximumTime = Math.min(maximumTime, Math.max(first, second));
+        if (minimumTime > maximumTime) return false;
+      }
+      return maximumTime > .02 && minimumTime < .98;
+    });
+    return !blocked;
+  }
+
   function createSimulation(definitions, options = {}) {
     const detectionGraceMs = options.detectionGraceMs || 900;
     const searchDurationMs = options.searchDurationMs || 4200;
@@ -14,6 +42,8 @@
       routeIndex: 1 % definition.route.length,
       x: definition.route[0].x,
       z: definition.route[0].z,
+      headingX: 0,
+      headingZ: -1,
       stateElapsedMs: 0,
       lastKnown: null
     }));
@@ -23,10 +53,16 @@
       const dz = target.z - actor.z;
       const remaining = Math.hypot(dx, dz);
       if (!remaining || remaining <= distance) {
+        if (remaining) {
+          actor.headingX = dx / remaining;
+          actor.headingZ = dz / remaining;
+        }
         actor.x = target.x;
         actor.z = target.z;
         return true;
       }
+      actor.headingX = dx / remaining;
+      actor.headingZ = dz / remaining;
       actor.x += dx / remaining * distance;
       actor.z += dz / remaining * distance;
       return false;
@@ -98,6 +134,8 @@
         actor.x = actor.route[0].x;
         actor.z = actor.route[0].z;
         actor.routeIndex = 1 % actor.route.length;
+        actor.headingX = 0;
+        actor.headingZ = -1;
         actor.lastKnown = null;
         setState(actor, 'patrol');
       } else return false;
@@ -110,6 +148,8 @@
         state: actor.state,
         x: Number(actor.x.toFixed(3)),
         z: Number(actor.z.toFixed(3)),
+        headingX: Number(actor.headingX.toFixed(3)),
+        headingZ: Number(actor.headingZ.toFixed(3)),
         routeIndex: actor.routeIndex,
         stateElapsedMs: actor.stateElapsedMs,
         lastKnown: actor.lastKnown ? { ...actor.lastKnown } : null
@@ -119,5 +159,5 @@
     return Object.freeze({ update, signal, snapshot });
   }
 
-  globalThis.CubeWardenWraiths = Object.freeze({ createSimulation, states });
+  globalThis.CubeWardenWraiths = Object.freeze({ createSimulation, hasLineOfSight, states });
 })();

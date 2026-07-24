@@ -332,6 +332,7 @@
   let archivePlayerMoving = false;
   let archiveSealInRange = false;
   let archiveReturnAnchor = null;
+  let archiveLastThreatState = 'patrol';
   let archiveRuntimePhase = 'boot';
   let archivePauseReturnPhase = 'title';
   const archiveRuntimePhases = new Set(['boot', 'title', 'exploration', 'seal-focus', 'pause', 'capture', 'epilogue', 'field-kit']);
@@ -921,12 +922,13 @@
         if (audioContext.state === 'suspended') audioContext.resume();
         const oscillator = audioContext.createOscillator();
         const gain = audioContext.createGain();
-        oscillator.frequency.value = kind === 'solved' ? 660 : 210;
+        oscillator.frequency.value = kind === 'solved' ? 660 : kind === 'warning' ? 145 : 210;
         gain.gain.setValueAtTime(.035 * scale, audioContext.currentTime);
-        gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + (kind === 'solved' ? .22 : .06));
+        const duration = kind === 'solved' ? .22 : kind === 'warning' ? .16 : .06;
+        gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + duration);
         oscillator.connect(gain).connect(audioContext.destination);
         oscillator.start();
-        oscillator.stop(audioContext.currentTime + (kind === 'solved' ? .22 : .06));
+        oscillator.stop(audioContext.currentTime + duration);
       } catch (error) {
         // Audio is decorative; a blocked or unavailable context must not affect play.
       }
@@ -2346,6 +2348,21 @@
   }
 
   function updateArchiveWraithSimulation(delta) {
+    const refugeActive = Boolean(archiveCanvas.dataset.refuge);
+    archiveWraithSimulation.snapshot().forEach(actor => {
+      const dx = archivePlayer.x - actor.x;
+      const dz = archivePlayer.z - actor.z;
+      const distance = Math.hypot(dx, dz);
+      const facing = distance ? (actor.headingX * dx + actor.headingZ * dz) / distance : 1;
+      const visible = !refugeActive && (distance <= 1.35 || (distance <= 8.5 && facing >= .34 && !archiveSightBlocked(actor, archivePlayer)));
+      if (visible && (actor.state === 'patrol' || actor.state === 'return')) {
+        archiveWraithSimulation.signal(actor.id, 'notice', { position: archivePlayer });
+      } else if (!visible && actor.state === 'detection') {
+        archiveWraithSimulation.signal(actor.id, 'return');
+      } else if (!visible && actor.state === 'pursuit') {
+        archiveWraithSimulation.signal(actor.id, 'lost', { position: archivePlayer });
+      }
+    });
     const actors = archiveWraithSimulation.update(delta * 1000, {
       paused: archiveRuntimePhase !== 'exploration',
       player: { x: archivePlayer.x, z: archivePlayer.z }
@@ -2357,6 +2374,24 @@
     archiveCanvas.dataset.wraithCount = String(actors.length);
     archiveCanvas.dataset.wraithState = nearest?.state || 'unavailable';
     archiveCanvas.dataset.wraithDistance = nearest ? nearest.distance.toFixed(2) : 'unavailable';
+    const threatState = refugeActive ? 'refuge' : nearest?.state || 'patrol';
+    const labels = {
+      refuge: 'Ward active · Wraiths cannot detect you',
+      patrol: 'Wraith patrol nearby',
+      detection: 'Warning · A Wraith is noticing you',
+      pursuit: 'Danger · Wraith pursuit',
+      search: 'Wraith searching your last position',
+      return: 'Wraith returning to patrol'
+    };
+    archiveThreat.querySelector('strong').textContent = labels[threatState];
+    archiveThreat.dataset.state = threatState;
+    archiveThreat.setAttribute('aria-label', labels[threatState]);
+    if (threatState !== archiveLastThreatState && (threatState === 'detection' || threatState === 'pursuit')) triggerFeedback('warning');
+    archiveLastThreatState = threatState;
+  }
+
+  function archiveSightBlocked(from, to) {
+    return !window.CubeWardenWraiths.hasLineOfSight(from, to, archiveWorld.solids, storyProgressState.completedEncounterIds);
   }
 
   function activeArchiveSeal() {
@@ -2486,8 +2521,8 @@
     updateArchiveWorldChange(time);
     moveArchivePlayer(delta);
     updateArchivePlayerDiagnostics();
-    updateArchiveWraithSimulation(delta);
     updateArchiveSealProximity();
+    updateArchiveWraithSimulation(delta);
     const gl = archiveGl;
     const { width, height } = resizeArchiveCanvas();
     gl.viewport(0, 0, width, height);
@@ -3631,7 +3666,11 @@
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
-  window.CubeWardenRuntime = Object.freeze({ phase: () => archiveRuntimePhase });
+  window.CubeWardenRuntime = Object.freeze({
+    phase: () => archiveRuntimePhase,
+    wraiths: () => archiveWraithSimulation.snapshot(),
+    sightBlocked: (from, to) => archiveSightBlocked(from, to)
+  });
   window.RubiksCubeFeedback = Object.freeze({ capabilities: feedbackCapabilities, preferences: () => ({ ...feedbackPreferences }), save: saveFeedbackPreferences });
   window.RubiksCubeTwoPlayer = Object.freeze({ state: () => ({ ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })), moves: twoPlayerState.moves.slice(), timesMs: twoPlayerState.timesMs.slice() }), start: startTwoPlayerRound, next: advanceTwoPlayerTurn, finish: finishTwoPlayerRound, reset: resetTwoPlayerState });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });

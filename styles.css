@@ -49,6 +49,13 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .archive-objective p:last-child { margin: 8px 0 0; color: #d7e1e1; font-size: .86rem; }
 .archive-threat { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 12px; border: 1px solid rgba(153,196,193,.4); border-radius: 999px; color: #dbe8e6; background: rgba(5,12,15,.76); font-size: .75rem; letter-spacing: .04em; text-transform: uppercase; backdrop-filter: blur(10px); }
 .archive-threat span { width: 8px; height: 8px; border-radius: 50%; background: #75d0bc; box-shadow: 0 0 12px #75d0bc; }
+.archive-threat[data-state="detection"] { border-style: dashed; border-width: 2px; }
+.archive-threat[data-state="detection"] span { border-radius: 2px; background: #f1c75b; box-shadow: 0 0 14px #f1c75b; animation: archive-warning-pulse .7s ease-in-out infinite alternate; }
+.archive-threat[data-state="pursuit"] { border-width: 3px; border-color: #f2a49b; }
+.archive-threat[data-state="pursuit"] span { border-radius: 0; transform: rotate(45deg); background: #f06b5f; box-shadow: 0 0 18px #f06b5f; }
+.archive-threat[data-state="search"] span { border-radius: 0; background: #d6b8ef; }
+.archive-threat[data-state="refuge"] span { outline: 2px double #d9fff5; outline-offset: 2px; }
+@keyframes archive-warning-pulse { to { transform: scale(1.65); } }
 .archive-reticle { position: absolute; z-index: 2; left: 50%; top: 50%; width: 18px; height: 18px; transform: translate(-50%, -50%); border: 1px solid rgba(255,255,255,.82); border-radius: 50%; pointer-events: none; }
 .archive-reticle::before, .archive-reticle::after { content: ""; position: absolute; left: 50%; top: 50%; background: rgba(255,255,255,.72); transform: translate(-50%, -50%); }
 .archive-reticle::before { width: 26px; height: 1px; }
