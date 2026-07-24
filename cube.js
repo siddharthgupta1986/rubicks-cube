@@ -29,6 +29,7 @@
   const archiveObjective = document.getElementById('archive-objective');
   const archiveThreat = document.getElementById('archive-threat');
   const archiveProgress = document.getElementById('archive-progress');
+  const archiveInteractionStatus = document.getElementById('archive-interaction-status');
   const archiveApproachSeal = document.getElementById('archive-approach-seal');
   const archiveBack = document.getElementById('archive-back');
   const storyEncounterPanel = document.getElementById('story-encounter-panel');
@@ -308,6 +309,8 @@
   let archiveElapsedTime = 0;
   let archiveRendererAvailable = true;
   let archivePlayerMoving = false;
+  let archiveSealInRange = false;
+  let archiveReturnAnchor = null;
   const archiveMovementKeys = new Set();
   const archivePlayer = {
     x: 0,
@@ -341,6 +344,9 @@
     surfaces: Object.freeze([
       Object.freeze({ id: 'gatehouse-floor', points: Object.freeze([[-6,0,5],[6,0,5],[6,0,-28],[-6,0,-28]]), material: 'floor', tile: Object.freeze([5,12]) }),
       Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) })
+    ]),
+    seals: Object.freeze([
+      Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 })
     ]),
     solids: Object.freeze([
       Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
@@ -2156,6 +2162,54 @@
     archiveCanvas.dataset.playerMoving = String(archivePlayerMoving);
   }
 
+  function activeArchiveSeal() {
+    const encounter = currentStoryEncounter();
+    return archiveWorld.seals.find(seal => seal.id === encounter.id) || archiveWorld.seals[0];
+  }
+
+  function updateArchiveSealProximity(force = false) {
+    const seal = activeArchiveSeal();
+    const distance = Math.hypot(archivePlayer.x - seal.position[0], archivePlayer.z - seal.position[2]);
+    const inRange = distance <= seal.interactionRadius;
+    archiveCanvas.dataset.sealDistance = distance.toFixed(2);
+    archiveCanvas.dataset.sealInRange = String(inRange);
+    if (!force && inRange === archiveSealInRange) return;
+    archiveSealInRange = inRange;
+    const encounter = currentStoryEncounter();
+    archiveApproachSeal.hidden = !inRange;
+    archiveApproachSeal.textContent = `Restore ${encounter.location} seal`;
+    archiveInteractionStatus.textContent = inRange
+      ? `Seal within reach. Press E or activate the Restore ${encounter.location} seal button.`
+      : `Explore the corridor to find the ${encounter.location} seal.`;
+  }
+
+  function beginArchiveSealFocus() {
+    if (storyProgressState.storyCompleted) {
+      showStoryEpilogue();
+      return;
+    }
+    updateArchiveSealProximity(true);
+    if (!archiveSealInRange) {
+      storyShellStatus.textContent = `${currentStoryEncounter().location} is not within reach. Move closer to the glowing seal.`;
+      archiveCanvas.focus();
+      return;
+    }
+    archiveReturnAnchor = { x: archivePlayer.x, z: archivePlayer.z, yaw: archivePlayer.yaw };
+    const seal = activeArchiveSeal();
+    archivePlayer.yaw = Math.atan2(seal.position[0] - archivePlayer.x, -(seal.position[2] - archivePlayer.z));
+    updateArchivePlayerDiagnostics();
+    showStoryBriefing();
+  }
+
+  function restoreArchiveFocusAnchor() {
+    if (!archiveReturnAnchor) return;
+    archivePlayer.x = archiveReturnAnchor.x;
+    archivePlayer.z = archiveReturnAnchor.z;
+    archivePlayer.yaw = archiveReturnAnchor.yaw;
+    archiveReturnAnchor = null;
+    updateArchivePlayerDiagnostics();
+  }
+
   function renderArchiveFrame(time) {
     if (!archiveAnimationFrame || archiveExploration.hidden || !archiveGl || !archiveProgram) return;
     const delta = archiveLastFrameTime ? Math.min((time - archiveLastFrameTime) / 1000, .05) : 0;
@@ -2163,6 +2217,7 @@
     archiveElapsedTime += delta;
     moveArchivePlayer(delta);
     updateArchivePlayerDiagnostics();
+    updateArchiveSealProximity();
     const gl = archiveGl;
     const { width, height } = resizeArchiveCanvas();
     gl.viewport(0, 0, width, height);
@@ -2265,11 +2320,14 @@
     storyShell.dataset.view = 'archive';
     document.body.dataset.experience = 'archive';
     saveStoryProgress();
+    restoreArchiveFocusAnchor();
     renderArchiveExploration();
+    updateArchiveSealProximity(true);
     startArchiveRenderer();
     const encounter = currentStoryEncounter();
     storyShellStatus.textContent = storyProgressState.storyCompleted ? 'All twelve seals are restored. The Dawn Vault is open.' : `Exploration ready in ${encounter.sector}. ${encounter.location} is the active seal.`;
-    archiveApproachSeal.focus();
+    if (archiveSealInRange) archiveApproachSeal.focus();
+    else archiveCanvas.focus();
   }
 
   function showStoryBriefing() {
@@ -2703,7 +2761,7 @@
       }
       if (event.key.toLowerCase() === 'e' && !event.repeat) {
         event.preventDefault();
-        archiveApproachSeal.click();
+        beginArchiveSealFocus();
         return;
       }
     }
@@ -3138,10 +3196,7 @@
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
   archiveBack.addEventListener('click', () => showStoryTitle('Returned to the title. Archive progress is saved.'));
-  archiveApproachSeal.addEventListener('click', () => {
-    if (storyProgressState.storyCompleted) showStoryEpilogue();
-    else showStoryBriefing();
-  });
+  archiveApproachSeal.addEventListener('click', beginArchiveSealFocus);
   storyEnterSeal.addEventListener('click', startStoryEncounter);
   storyBriefingMap.addEventListener('click', showArchiveExploration);
   storyBriefingFieldKit.addEventListener('click', openFieldKit);
