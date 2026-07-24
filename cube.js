@@ -241,10 +241,10 @@
     'compass-hall': Object.freeze({ x: 0, z: -30.5, yaw: 0 }),
     'chapel-steps': Object.freeze({ x: 18, z: -43.5, yaw: 0 }),
     'mirror-bridge': Object.freeze({ x: 28, z: -61.5, yaw: Math.PI / 2 }),
-    'lantern-rooms': Object.freeze({ x: 48, z: -70, yaw: Math.PI / 2 }),
-    'flooded-archive': Object.freeze({ x: 62, z: -84, yaw: 0 }),
-    'gearworks': Object.freeze({ x: 78, z: -96, yaw: Math.PI / 2 }),
-    'furnace-passage': Object.freeze({ x: 92, z: -112, yaw: 0 }),
+    'lantern-rooms': Object.freeze({ x: 40, z: -62, yaw: Math.PI / 2 }),
+    'flooded-archive': Object.freeze({ x: 60, z: -69, yaw: 0 }),
+    'gearworks': Object.freeze({ x: 63, z: -86, yaw: Math.PI / 2 }),
+    'furnace-passage': Object.freeze({ x: 76, z: -93, yaw: 0 }),
     'observatory': Object.freeze({ x: 108, z: -126, yaw: Math.PI / 2 }),
     'clock-tower': Object.freeze({ x: 122, z: -142, yaw: 0 }),
     'wardens-door': Object.freeze({ x: 138, z: -156, yaw: Math.PI / 2 }),
@@ -364,7 +364,7 @@
     seal: Object.freeze({ tint: Object.freeze([1,.76,.28]), atlas: Object.freeze([.5,.5,1,1]) })
   });
   const archiveWorld = Object.freeze({
-    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-66]), maximum: Object.freeze([36,5,5]) }),
+    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-118]), maximum: Object.freeze([82,5,5]) }),
     surfaces: Object.freeze([
       Object.freeze({ id: 'gatehouse-floor', points: Object.freeze([[-6,0,5],[6,0,5],[6,0,-28],[-6,0,-28]]), material: 'floor', tile: Object.freeze([5,12]) }),
       Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) }),
@@ -374,13 +374,24 @@
       Object.freeze({ id: 'glass-gallery-ceiling', points: Object.freeze([[-6,5,-42],[24,5,-42],[24,5,-34],[-6,5,-34]]), material: 'stone', tile: Object.freeze([12,3]) }),
       Object.freeze({ id: 'chapel-floor', points: Object.freeze([[12,0,-42],[24,0,-42],[24,0,-66],[12,0,-66]]), material: 'floor', tile: Object.freeze([5,9]) }),
       Object.freeze({ id: 'chapel-ceiling', points: Object.freeze([[12,5,-66],[24,5,-66],[24,5,-42],[12,5,-42]]), material: 'stone', tile: Object.freeze([5,9]) }),
-      Object.freeze({ id: 'mirror-bridge-floor', points: Object.freeze([[24,0,-58],[36,0,-58],[36,0,-66],[24,0,-66]]), material: 'iron', tile: Object.freeze([5,3]) })
+      Object.freeze({ id: 'mirror-bridge-floor', points: Object.freeze([[24,0,-58],[36,0,-58],[36,0,-66],[24,0,-66]]), material: 'iron', tile: Object.freeze([5,3]) }),
+      Object.freeze({ id: 'lantern-gallery-floor', points: Object.freeze([[36,0,-58],[66,0,-58],[66,0,-66],[36,0,-66]]), material: 'floor', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'lantern-gallery-ceiling', points: Object.freeze([[36,5,-66],[66,5,-66],[66,5,-58],[36,5,-58]]), material: 'stone', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'flooded-floor', points: Object.freeze([[54,0,-66],[66,0,-66],[66,0,-90],[54,0,-90]]), material: 'floor', tile: Object.freeze([5,9]) }),
+      Object.freeze({ id: 'flooded-ceiling', points: Object.freeze([[54,5,-90],[66,5,-90],[66,5,-66],[54,5,-66]]), material: 'stone', tile: Object.freeze([5,9]) }),
+      Object.freeze({ id: 'gearworks-floor', points: Object.freeze([[54,0,-82],[82,0,-82],[82,0,-90],[54,0,-90]]), material: 'iron', tile: Object.freeze([11,3]) }),
+      Object.freeze({ id: 'gearworks-ceiling', points: Object.freeze([[54,5,-90],[82,5,-90],[82,5,-82],[54,5,-82]]), material: 'stone', tile: Object.freeze([11,3]) }),
+      Object.freeze({ id: 'furnace-floor', points: Object.freeze([[70,0,-90],[82,0,-90],[82,0,-118],[70,0,-118]]), material: 'iron', tile: Object.freeze([5,11]) })
     ]),
     seals: Object.freeze([
       Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'compass-hall', position: Object.freeze([0,1.3,-33.2]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'chapel-steps', position: Object.freeze([18,1.3,-48]), interactionRadius: 2.15 }),
-      Object.freeze({ id: 'mirror-bridge', position: Object.freeze([31.5,1.3,-62]), interactionRadius: 2.15 })
+      Object.freeze({ id: 'mirror-bridge', position: Object.freeze([31.5,1.3,-62]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'lantern-rooms', position: Object.freeze([43,1.3,-62]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'flooded-archive', position: Object.freeze([60,1.3,-74]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'gearworks', position: Object.freeze([72,1.3,-86]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'furnace-passage', position: Object.freeze([76,1.3,-103]), interactionRadius: 2.15 })
     ]),
     solids: Object.freeze([
       Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
@@ -412,10 +423,32 @@
       Object.freeze({ id: 'chapel-bridge-door', minimum: Object.freeze([12.3,0,-56]), maximum: Object.freeze([23.7,4.1,-55.4]), material: 'iron', collision: true, opensWith: 'chapel-steps', travel: 4.35 }),
       Object.freeze({ id: 'bridge-north-rail', minimum: Object.freeze([24,0,-58.3]), maximum: Object.freeze([36,1.15,-58]), material: 'iron', collision: true }),
       Object.freeze({ id: 'bridge-south-rail', minimum: Object.freeze([24,0,-66]), maximum: Object.freeze([36,1.15,-65.7]), material: 'iron', collision: true }),
-      Object.freeze({ id: 'bridge-end-wall', minimum: Object.freeze([35.7,0,-66]), maximum: Object.freeze([36,5,-58]), material: 'stone', collision: true }),
       Object.freeze({ id: 'mirror-vault-shutter', minimum: Object.freeze([35.15,0,-64.8]), maximum: Object.freeze([35.7,4.1,-59.2]), material: 'iron', collision: true, opensWith: 'mirror-bridge', travel: 4.35 }),
       Object.freeze({ id: 'mirror-dais', minimum: Object.freeze([29.85,0,-63.65]), maximum: Object.freeze([33.15,.78,-60.35]), material: 'iron', collision: true }),
-      Object.freeze({ id: 'mirror-seal', minimum: Object.freeze([30.78,.78,-62.7]), maximum: Object.freeze([32.22,1.78,-61.3]), material: 'seal', collision: true })
+      Object.freeze({ id: 'mirror-seal', minimum: Object.freeze([30.78,.78,-62.7]), maximum: Object.freeze([32.22,1.78,-61.3]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'lantern-north-wall', minimum: Object.freeze([36,0,-58.3]), maximum: Object.freeze([66,5,-58]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'lantern-south-wall', minimum: Object.freeze([36,0,-66]), maximum: Object.freeze([54,5,-65.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'lantern-east-wall', minimum: Object.freeze([65.7,0,-82]), maximum: Object.freeze([66,5,-58]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'lantern-dais', minimum: Object.freeze([41.35,0,-63.65]), maximum: Object.freeze([44.65,.78,-60.35]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'lantern-seal', minimum: Object.freeze([42.28,.78,-62.7]), maximum: Object.freeze([43.72,1.78,-61.3]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'lantern-floodgate', minimum: Object.freeze([54.3,0,-66.3]), maximum: Object.freeze([65.7,4.1,-65.7]), material: 'iron', collision: true, opensWith: 'lantern-rooms', travel: 4.35 }),
+      Object.freeze({ id: 'flooded-west-wall', minimum: Object.freeze([54,0,-90]), maximum: Object.freeze([54.3,5,-66]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'flooded-east-wall', minimum: Object.freeze([65.7,0,-82]), maximum: Object.freeze([66,5,-66]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'flooded-dais', minimum: Object.freeze([58.35,0,-76.05]), maximum: Object.freeze([61.65,.78,-72.8]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'flooded-seal', minimum: Object.freeze([59.28,.78,-75.35]), maximum: Object.freeze([60.72,1.78,-73.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'flooded-gear-door', minimum: Object.freeze([65.7,0,-89.7]), maximum: Object.freeze([66.3,4.1,-82.3]), material: 'iron', collision: true, opensWith: 'flooded-archive', travel: 4.35 }),
+      Object.freeze({ id: 'gearworks-north-wall', minimum: Object.freeze([66,0,-82.3]), maximum: Object.freeze([82,5,-82]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gearworks-south-wall', minimum: Object.freeze([54,0,-90]), maximum: Object.freeze([70,5,-89.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gearworks-east-wall', minimum: Object.freeze([81.7,0,-90]), maximum: Object.freeze([82,5,-82]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gearworks-dais', minimum: Object.freeze([70.35,0,-87.65]), maximum: Object.freeze([73.65,.78,-84.35]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'gearworks-seal', minimum: Object.freeze([71.28,.78,-86.7]), maximum: Object.freeze([72.72,1.78,-85.3]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'gearworks-furnace-door', minimum: Object.freeze([70.3,0,-90.3]), maximum: Object.freeze([81.7,4.1,-89.7]), material: 'iron', collision: true, opensWith: 'gearworks', travel: 4.35 }),
+      Object.freeze({ id: 'furnace-west-wall', minimum: Object.freeze([70,0,-118]), maximum: Object.freeze([70.3,5,-90]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'furnace-east-wall', minimum: Object.freeze([81.7,0,-118]), maximum: Object.freeze([82,5,-90]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'furnace-south-wall', minimum: Object.freeze([70,0,-118]), maximum: Object.freeze([82,5,-117.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'furnace-dais', minimum: Object.freeze([74.35,0,-105.05]), maximum: Object.freeze([77.65,.78,-101.8]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'furnace-seal', minimum: Object.freeze([75.28,.78,-104.35]), maximum: Object.freeze([76.72,1.78,-102.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'furnace-lift-shutter', minimum: Object.freeze([72,0,-117.7]), maximum: Object.freeze([80,4.1,-117.1]), material: 'iron', collision: true, opensWith: 'furnace-passage', travel: 4.35 })
     ])
   });
   let dailyChallengeActive = false;
