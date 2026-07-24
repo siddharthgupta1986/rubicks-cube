@@ -22,7 +22,7 @@
 - Keep state mutation in named functions. Rendering should derive the DOM from state rather than becoming a second state store.
 - Record any user-visible cube move in `history`; use `record = false` only while replaying the inverse solution.
 - Define Story encounters as data with legal setup moves, validator and progress IDs, three hints, a target move count, and a pressure budget.
-- Sanitize `rubiks-cube.story.v1` before use. Invalid Story data must fall back without deleting or rewriting Cube Academy records.
+- Sanitize `rubiks-cube.archive.v2` through `archive-state.js` before use. Invalid campaign data must fall back without deleting or rewriting legacy Story or Cube Academy records.
 - Route Story, Field Kit, Missions, Speedrun, Guided Solve, Daily Challenge, replay, and two-player transitions through the centralized cleanup contract.
 - Retry must reverse only moves made after the active Story checkpoint. Leaving Story must restore solved state through legal inverse moves.
 - Do not use `innerHTML` for dynamic strings. Build DOM nodes with `document.createElement` and `textContent`.
@@ -41,7 +41,7 @@
 - The requested behavior works without a backend or package installation.
 - First run, refresh resume, New Game, all twelve Story victories, hint pressure, capture, retry, and the epilogue follow the PRD.
 - Every Story setup is composed of legal turns; alternate state-valid solutions count even when they differ from the target move count.
-- Story progress survives refresh in `rubiks-cube.story.v1`, while malformed records fall back safely and legacy Academy data remains untouched.
+- Campaign progress survives refresh in `rubiks-cube.archive.v2`, while malformed records fall back safely and legacy Story and Academy data remain untouched.
 - Story map nodes expose current, completed, and ahead status in text and with non-color visual cues.
 - Opening or leaving Field Kit, Missions, Speedrun, Guided Solve, Daily Challenge, replay, and two-player modes clears incompatible runtime state.
 - The cube can still be dragged and all six faces render correctly.
@@ -55,6 +55,7 @@
 - Scramble studio checks: changing constraints only changes the preview; malformed lengths are clamped, generated moves never repeat a face consecutively, and Apply is the only action that changes stickers or history.
 - Custom scramble workflow checks: apply a studio scramble, Solve it, then use Daily challenge, Speedrun, Missions, Guided solve, State export/import, and keyboard turns; verify each workflow starts from its own state and malformed previews never partially apply.
 - The HTML parser and JavaScript syntax checks pass.
+- `node tests/archive-state-fixtures.js` passes all thirteen progress states, refresh, capture-spawn, completion, malformed-data, and storage-isolation cases.
 - `git diff --check` passes.
 - Both direct `index.html` and localhost operation are checked, with no runtime network dependency.
 - Documentation is updated if the public behavior or file layout changes.
