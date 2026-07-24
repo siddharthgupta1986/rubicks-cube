@@ -382,11 +382,13 @@
       Object.freeze({ id: 'gearworks-floor', points: Object.freeze([[54,0,-82],[82,0,-82],[82,0,-90],[54,0,-90]]), material: 'iron', tile: Object.freeze([11,3]) }),
       Object.freeze({ id: 'gearworks-ceiling', points: Object.freeze([[54,5,-90],[82,5,-90],[82,5,-82],[54,5,-82]]), material: 'stone', tile: Object.freeze([11,3]) }),
       Object.freeze({ id: 'furnace-floor', points: Object.freeze([[70,0,-90],[82,0,-90],[82,0,-118],[70,0,-118]]), material: 'iron', tile: Object.freeze([5,11]) }),
+      Object.freeze({ id: 'sunken-side-room-floor', points: Object.freeze([[46,0,-66],[54,0,-66],[54,0,-72],[46,0,-72]]), material: 'floor', tile: Object.freeze([3,2]) }),
       Object.freeze({ id: 'star-tower-floor', points: Object.freeze([[72,0,-118],[80,0,-118],[80,0,-146],[72,0,-146]]), material: 'floor', tile: Object.freeze([3,11]) }),
       Object.freeze({ id: 'star-tower-ceiling', points: Object.freeze([[72,5,-146],[80,5,-146],[80,5,-118],[72,5,-118]]), material: 'stone', tile: Object.freeze([3,11]) }),
       Object.freeze({ id: 'warden-gallery-floor', points: Object.freeze([[72,0,-146],[104,0,-146],[104,0,-154],[72,0,-154]]), material: 'iron', tile: Object.freeze([12,3]) }),
       Object.freeze({ id: 'warden-gallery-ceiling', points: Object.freeze([[72,5,-154],[104,5,-154],[104,5,-146],[72,5,-146]]), material: 'stone', tile: Object.freeze([12,3]) }),
-      Object.freeze({ id: 'dawn-vault-floor', points: Object.freeze([[96,0,-154],[104,0,-154],[104,0,-182],[96,0,-182]]), material: 'floor', tile: Object.freeze([3,11]) })
+      Object.freeze({ id: 'dawn-vault-floor', points: Object.freeze([[96,0,-154],[104,0,-154],[104,0,-182],[96,0,-182]]), material: 'floor', tile: Object.freeze([3,11]) }),
+      Object.freeze({ id: 'warden-side-room-floor', points: Object.freeze([[84,0,-154],[92,0,-154],[92,0,-160],[84,0,-160]]), material: 'iron', tile: Object.freeze([3,2]) })
     ]),
     seals: Object.freeze([
       Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 }),
@@ -401,6 +403,33 @@
       Object.freeze({ id: 'clock-tower', position: Object.freeze([76,1.3,-140]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'wardens-door', position: Object.freeze([88,1.3,-150]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'dawn-vault', position: Object.freeze([100,1.3,-170]), interactionRadius: 2.15 })
+    ]),
+    landmarks: Object.freeze([
+      Object.freeze({ encounterId: 'gatehouse', label: 'golden Gatehouse seal', position: Object.freeze([0,0,-9.1]) }),
+      Object.freeze({ encounterId: 'compass-hall', label: 'turning compass rose', position: Object.freeze([0,0,-33.2]) }),
+      Object.freeze({ encounterId: 'chapel-steps', label: 'four glass chapel lamps', position: Object.freeze([18,0,-48]) }),
+      Object.freeze({ encounterId: 'mirror-bridge', label: 'iron mirror bridge', position: Object.freeze([31.5,0,-62]) }),
+      Object.freeze({ encounterId: 'lantern-rooms', label: 'amber lantern gallery', position: Object.freeze([43,0,-62]) }),
+      Object.freeze({ encounterId: 'flooded-archive', label: 'blue flooded stair', position: Object.freeze([60,0,-74]) }),
+      Object.freeze({ encounterId: 'gearworks', label: 'great brass gear', position: Object.freeze([72,0,-86]) }),
+      Object.freeze({ encounterId: 'furnace-passage', label: 'red furnace channel', position: Object.freeze([76,0,-103]) }),
+      Object.freeze({ encounterId: 'observatory', label: 'star lens', position: Object.freeze([76,0,-126]) }),
+      Object.freeze({ encounterId: 'clock-tower', label: 'golden clock face', position: Object.freeze([76,0,-140]) }),
+      Object.freeze({ encounterId: 'wardens-door', label: "Warden's iron crest", position: Object.freeze([88,0,-150]) }),
+      Object.freeze({ encounterId: 'dawn-vault', label: 'white Dawn Vault beam', position: Object.freeze([100,0,-170]) })
+    ]),
+    refuges: Object.freeze([
+      Object.freeze({ id: 'entrance-refuge', label: 'Archive entrance ward', position: Object.freeze([0,0,3.35]) }),
+      Object.freeze({ id: 'ash-refuge', label: 'Ash Gate ward', position: Object.freeze([0,0,-30]) }),
+      Object.freeze({ id: 'glass-refuge', label: 'Chapel lamp ward', position: Object.freeze([18,0,-43]) }),
+      Object.freeze({ id: 'sunken-refuge', label: 'Lantern ward', position: Object.freeze([58,0,-63]) }),
+      Object.freeze({ id: 'iron-refuge', label: 'Gearworks ward', position: Object.freeze([62,0,-86]) }),
+      Object.freeze({ id: 'star-refuge', label: 'Observatory ward', position: Object.freeze([76,0,-121]) }),
+      Object.freeze({ id: 'warden-refuge', label: 'Warden crest ward', position: Object.freeze([84,0,-150]) })
+    ]),
+    discoveries: Object.freeze([
+      Object.freeze({ id: 'sunken-warden-note', label: 'Waterlogged Warden note', position: Object.freeze([50,0,-69]), radius: 1.6 }),
+      Object.freeze({ id: 'warden-cube-finish', label: 'Dawn-metal cube finish', position: Object.freeze([88,0,-157]), radius: 1.6 })
     ]),
     solids: Object.freeze([
       Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
@@ -436,7 +465,10 @@
       Object.freeze({ id: 'mirror-dais', minimum: Object.freeze([29.85,0,-63.65]), maximum: Object.freeze([33.15,.78,-60.35]), material: 'iron', collision: true }),
       Object.freeze({ id: 'mirror-seal', minimum: Object.freeze([30.78,.78,-62.7]), maximum: Object.freeze([32.22,1.78,-61.3]), material: 'seal', collision: true }),
       Object.freeze({ id: 'lantern-north-wall', minimum: Object.freeze([36,0,-58.3]), maximum: Object.freeze([66,5,-58]), material: 'stone', collision: true }),
-      Object.freeze({ id: 'lantern-south-wall', minimum: Object.freeze([36,0,-66]), maximum: Object.freeze([54,5,-65.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'lantern-south-wall', minimum: Object.freeze([36,0,-66]), maximum: Object.freeze([46,5,-65.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'sunken-side-west', minimum: Object.freeze([46,0,-72]), maximum: Object.freeze([46.3,5,-66]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'sunken-side-east', minimum: Object.freeze([53.7,0,-72]), maximum: Object.freeze([54,5,-66]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'sunken-side-south', minimum: Object.freeze([46,0,-72]), maximum: Object.freeze([54,5,-71.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'lantern-east-wall', minimum: Object.freeze([65.7,0,-82]), maximum: Object.freeze([66,5,-58]), material: 'stone', collision: true }),
       Object.freeze({ id: 'lantern-dais', minimum: Object.freeze([41.35,0,-63.65]), maximum: Object.freeze([44.65,.78,-60.35]), material: 'floor', collision: true }),
       Object.freeze({ id: 'lantern-seal', minimum: Object.freeze([42.28,.78,-62.7]), maximum: Object.freeze([43.72,1.78,-61.3]), material: 'seal', collision: true }),
@@ -468,7 +500,11 @@
       Object.freeze({ id: 'clock-seal', minimum: Object.freeze([75.28,.78,-141.35]), maximum: Object.freeze([76.72,1.78,-139.95]), material: 'seal', collision: true }),
       Object.freeze({ id: 'clock-warden-door', minimum: Object.freeze([79.7,0,-145.7]), maximum: Object.freeze([80.3,4.1,-132.3]), material: 'iron', collision: true, opensWith: 'clock-tower', travel: 4.35 }),
       Object.freeze({ id: 'warden-north-wall', minimum: Object.freeze([84,0,-146.3]), maximum: Object.freeze([104,5,-146]), material: 'stone', collision: true }),
-      Object.freeze({ id: 'warden-south-wall', minimum: Object.freeze([72,0,-154]), maximum: Object.freeze([96,5,-153.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-south-west', minimum: Object.freeze([72,0,-154]), maximum: Object.freeze([84,5,-153.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-south-east', minimum: Object.freeze([92,0,-154]), maximum: Object.freeze([96,5,-153.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-side-west', minimum: Object.freeze([84,0,-160]), maximum: Object.freeze([84.3,5,-154]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-side-east', minimum: Object.freeze([91.7,0,-160]), maximum: Object.freeze([92,5,-154]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-side-south', minimum: Object.freeze([84,0,-160]), maximum: Object.freeze([92,5,-159.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'warden-east-wall', minimum: Object.freeze([103.7,0,-154]), maximum: Object.freeze([104,5,-146]), material: 'stone', collision: true }),
       Object.freeze({ id: 'warden-dais', minimum: Object.freeze([86.35,0,-151.65]), maximum: Object.freeze([89.65,.78,-148.35]), material: 'iron', collision: true }),
       Object.freeze({ id: 'warden-seal', minimum: Object.freeze([87.28,.78,-150.7]), maximum: Object.freeze([88.72,1.78,-149.3]), material: 'seal', collision: true }),
@@ -2306,6 +2342,33 @@
     return archiveWorld.seals.find(seal => seal.id === encounter.id) || null;
   }
 
+  function updateArchiveNavigation(inRange) {
+    const refuge = archiveWorld.refuges.find(item => Math.hypot(archivePlayer.x - item.position[0], archivePlayer.z - item.position[2]) <= 2.6);
+    archiveCanvas.dataset.refuge = refuge?.id || '';
+    archiveThreat.querySelector('strong').textContent = refuge ? `${refuge.label} active` : 'Wraiths distant';
+
+    const discovery = archiveWorld.discoveries.find(item => !storyProgressState.discoveries.includes(item.id)
+      && Math.hypot(archivePlayer.x - item.position[0], archivePlayer.z - item.position[2]) <= item.radius);
+    if (discovery) {
+      storyProgressState.discoveries.push(discovery.id);
+      saveStoryProgress();
+      archiveCanvas.dataset.discovery = discovery.id;
+      storyShellStatus.textContent = `${discovery.label} discovered. Optional Archive knowledge saved.`;
+    }
+    archiveCanvas.dataset.discoveryCount = String(storyProgressState.discoveries.length);
+    if (inRange) return;
+
+    const landmark = archiveWorld.landmarks.find(item => item.encounterId === currentStoryEncounter().id);
+    if (!landmark) return;
+    const deltaX = landmark.position[0] - archivePlayer.x;
+    const deltaZ = landmark.position[2] - archivePlayer.z;
+    const direction = Math.abs(deltaX) > Math.abs(deltaZ)
+      ? (deltaX > 0 ? 'east' : 'west')
+      : (deltaZ > 0 ? 'north' : 'south');
+    archiveInteractionStatus.textContent = `Follow the ${landmark.label} ${Math.max(1, Math.round(Math.hypot(deltaX, deltaZ)))} meters ${direction}.`;
+    archiveCanvas.dataset.landmark = landmark.encounterId;
+  }
+
   function updateArchiveSealProximity(force = false) {
     const seal = activeArchiveSeal();
     if (!seal) {
@@ -2320,6 +2383,7 @@
     const inRange = distance <= seal.interactionRadius;
     archiveCanvas.dataset.sealDistance = distance.toFixed(2);
     archiveCanvas.dataset.sealInRange = String(inRange);
+    updateArchiveNavigation(inRange);
     if (!force && inRange === archiveSealInRange) return;
     archiveSealInRange = inRange;
     const encounter = currentStoryEncounter();
@@ -2327,7 +2391,7 @@
     archiveApproachSeal.textContent = `Restore ${encounter.location} seal`;
     archiveInteractionStatus.textContent = inRange
       ? `Seal within reach. Press E or activate the Restore ${encounter.location} seal button.`
-      : `Explore the corridor to find the ${encounter.location} seal.`;
+      : archiveInteractionStatus.textContent;
   }
 
   function queueArchiveWorldChange(sealId) {
