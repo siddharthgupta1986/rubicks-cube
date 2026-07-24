@@ -56,6 +56,11 @@
   const storyVictoryTitle = document.getElementById('story-victory-title');
   const storyVictorySummary = document.getElementById('story-victory-summary');
   const storyVictoryContinue = document.getElementById('story-victory-continue');
+  const storyEpilogue = document.getElementById('story-epilogue');
+  const storyEpilogueStat = document.getElementById('story-epilogue-stat');
+  const storyReplayRoute = document.getElementById('story-replay-route');
+  const storyEpilogueFieldKit = document.getElementById('story-epilogue-field-kit');
+  const storyEpilogueTitle = document.getElementById('story-epilogue-title');
   const storyFailure = document.getElementById('story-failure');
   const storyFailureRetry = document.getElementById('story-failure-retry');
   const storyFailureMap = document.getElementById('story-failure-map');
@@ -261,6 +266,28 @@
       progressGoal: 12,
       progressUnit: 'middle-layer stickers aligned',
       success: 'All four channels align. The furnace opens a warm passage toward the Star Tower.'
+    }),
+    observatory: Object.freeze({
+      orientation: 'Keep yellow on top. Hold a yellow line horizontally or an L shape in the top-left before the cross algorithm.',
+      progressGoal: 5,
+      progressUnit: 'yellow cross stickers facing up',
+      success: 'The yellow cross focuses the observatory lens. A beam finds the Clock Tower.'
+    }),
+    'clock-tower': Object.freeze({
+      orientation: 'Keep yellow on top. Work on one unsolved corner at front-right-top and turn only U between corners.',
+      progressGoal: 9,
+      progressUnit: 'yellow face stickers facing up',
+      success: 'All nine golden dials face the sky. The final bell unlocks Warden Keep.'
+    }),
+    'wardens-door': Object.freeze({
+      orientation: 'Keep yellow on top. Check each corner by its three colors, even when yellow points sideways.',
+      success: "Every final piece finds its home. The Warden's Door opens onto the Dawn Vault."
+    }),
+    'dawn-vault': Object.freeze({
+      orientation: 'Choose a stable view and solve in layers: white cross, white corners, middle edges, then the yellow layer.',
+      progressGoal: 54,
+      progressUnit: 'stickers aligned',
+      success: 'The final cube settles into six solid faces. Dawn races through the Broken Archive.'
     })
   };
   const storyMapCoordinates = Object.freeze([
@@ -1817,6 +1844,7 @@
     storyGameplay.hidden = true;
     storyVictory.hidden = true;
     storyFailure.hidden = true;
+    storyEpilogue.hidden = true;
     storyEncounterSector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} of ${storyEncounters.length}`;
     storyEncounterTitle.textContent = encounter.location;
     storyEncounterNarrative.textContent = encounter.narrative;
@@ -1900,6 +1928,7 @@
     storyBriefing.hidden = true;
     storyVictory.hidden = true;
     storyFailure.hidden = true;
+    storyEpilogue.hidden = true;
     storyGameplay.hidden = false;
     storyGameplaySector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} active`;
     storyGameplayTitle.textContent = encounter.location;
@@ -1957,7 +1986,7 @@
     storyVictory.hidden = false;
     storyVictoryTitle.textContent = finalEncounter ? 'The Dawn Vault opens' : `${encounter.location} secured`;
     const storyBeat = storyEncounterContent[encounter.id]?.success || 'The restored seal lights the next section of the route.';
-    storyVictorySummary.textContent = finalEncounter ? `All twelve seals are restored. Aya completed the final seal in ${storyPlayerMoves} moves.` : `${storyBeat} ${storyPlayerMoves} moves recorded; ${storyEncounters[encounterIndex + 1].location} is now open.`;
+    storyVictorySummary.textContent = finalEncounter ? `${storyBeat} Aya completed the final seal in ${storyPlayerMoves} moves.` : `${storyBeat} ${storyPlayerMoves} moves recorded; ${storyEncounters[encounterIndex + 1].location} is now open.`;
     storyVictoryContinue.textContent = finalEncounter ? 'See the Restored Route' : 'Continue the Route';
     storyEncounterStatus.textContent = `Seal restored in ${storyPlayerMoves} moves.`;
     storyVictoryContinue.focus();
@@ -1994,11 +2023,34 @@
   }
 
   function continueStoryRoute() {
+    if (storyProgressState.storyCompleted) {
+      showStoryEpilogue();
+      return;
+    }
     storyEncounterPanel.hidden = true;
     fieldKitCube.hidden = true;
     history = [];
     initialize();
     showStoryMap(true);
+  }
+
+  function showStoryEpilogue() {
+    storyShell.hidden = true;
+    fieldKitContent.hidden = true;
+    fieldKitCube.hidden = true;
+    storyEncounterPanel.hidden = false;
+    storyBriefing.hidden = true;
+    storyGameplay.hidden = true;
+    storyFailure.hidden = true;
+    storyVictory.hidden = true;
+    storyEpilogue.hidden = false;
+    history = [];
+    initialize();
+    const totalMoves = Object.values(storyProgressState.bestMoveCounts).reduce((total, moves) => total + moves, 0);
+    storyEpilogueStat.textContent = `Twelve seals restored${totalMoves ? ` · Best recorded route: ${totalMoves} moves` : ''}.`;
+    storyEncounterStatus.textContent = 'The Last Route is complete. Dawn has returned.';
+    document.body.dataset.experience = 'story-encounter';
+    storyReplayRoute.focus();
   }
 
   function openFieldKit() {
@@ -2552,7 +2604,10 @@
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
   storyMapBack.addEventListener('click', () => showStoryTitle('Returned to the title. Route progress is saved.'));
-  storyMapContinue.addEventListener('click', showStoryBriefing);
+  storyMapContinue.addEventListener('click', () => {
+    if (storyProgressState.storyCompleted) showStoryEpilogue();
+    else showStoryBriefing();
+  });
   storyEnterSeal.addEventListener('click', startStoryEncounter);
   storyBriefingMap.addEventListener('click', () => showStoryMap());
   storyTurnControls.addEventListener('click', event => {
@@ -2567,6 +2622,14 @@
   storyFailureRetry.addEventListener('click', retryStoryEncounter);
   storyFailureMap.addEventListener('click', leaveStoryEncounterToMap);
   storyVictoryContinue.addEventListener('click', continueStoryRoute);
+  storyReplayRoute.addEventListener('click', () => {
+    resetStoryProgress();
+    history = [];
+    initialize();
+    showStoryTitle('A new route is ready at the Ash Gate.');
+  });
+  storyEpilogueFieldKit.addEventListener('click', openFieldKit);
+  storyEpilogueTitle.addEventListener('click', () => showStoryTitle('The completed route is saved.'));
 
   viewport.addEventListener('pointerdown', event => {
     if (busy) return;

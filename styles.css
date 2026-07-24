@@ -81,6 +81,9 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .story-failure p:not(.story-kicker) { max-width: 460px; color: #d6dddd; line-height: 1.55; }
 .story-victory { padding: 20px 0; }
 .story-victory .story-primary { margin-top: 12px; }
+.story-epilogue { margin: -20px; padding: clamp(30px, 6vw, 62px); border: 1px solid #d3ad59; border-radius: 8px; background: linear-gradient(90deg, rgba(8,14,17,.96), rgba(8,14,17,.38)), url("assets/cube-warden/title-backdrop.jpg") 68% center / cover; }
+.story-epilogue > p:not(.story-kicker) { max-width: 530px; color: #e0e7e6; line-height: 1.6; }
+.story-epilogue-stat { color: #f1c667 !important; font-weight: 850; }
 body[data-experience="story-encounter"] { color: #eef4f4; background: #10191c; }
 body[data-experience="story-encounter"] .app { align-items: stretch; gap: clamp(18px, 4vw, 42px); padding: clamp(18px, 4vw, 38px); border-color: #344a50; background: #172226; }
 body[data-experience="story-encounter"] .cube-panel { overflow: hidden; place-content: center; border: 1px solid #4e6268; border-radius: 8px; background: linear-gradient(rgba(8,14,17,.38), rgba(8,14,17,.72)), url("assets/cube-warden/encounter-chamber.jpg") center / cover; }
