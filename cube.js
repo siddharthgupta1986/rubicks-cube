@@ -22,13 +22,14 @@
   const storyNewGame = document.getElementById('story-new-game');
   const storyFieldKit = document.getElementById('story-field-kit');
   const storyShellStatus = document.getElementById('story-shell-status');
-  const storyMapScreen = document.getElementById('story-map-screen');
-  const storyMapObjective = document.getElementById('story-map-objective');
-  const storyMapBack = document.getElementById('story-map-back');
-  const storyMapContinue = document.getElementById('story-map-continue');
-  const storyRoute = document.getElementById('story-route');
-  const storyRouteSummary = document.getElementById('story-route-summary');
-  const storyAyaMarker = document.getElementById('story-aya-marker');
+  const archiveExploration = document.getElementById('archive-exploration');
+  const archiveSector = document.getElementById('archive-sector');
+  const archiveLocation = document.getElementById('archive-location');
+  const archiveObjective = document.getElementById('archive-objective');
+  const archiveThreat = document.getElementById('archive-threat');
+  const archiveProgress = document.getElementById('archive-progress');
+  const archiveApproachSeal = document.getElementById('archive-approach-seal');
+  const archiveBack = document.getElementById('archive-back');
   const storyEncounterPanel = document.getElementById('story-encounter-panel');
   const storyBriefing = document.getElementById('story-briefing');
   const storyEncounterSector = document.getElementById('story-encounter-sector');
@@ -293,14 +294,6 @@
       success: 'The final cube settles into six solid faces. Dawn races through the Broken Archive.'
     })
   };
-  const storyMapCoordinates = Object.freeze([
-    Object.freeze({ x: 8, y: 82 }), Object.freeze({ x: 20, y: 73 }),
-    Object.freeze({ x: 25, y: 61 }), Object.freeze({ x: 31, y: 47 }),
-    Object.freeze({ x: 48, y: 65 }), Object.freeze({ x: 47, y: 49 }),
-    Object.freeze({ x: 46, y: 34 }), Object.freeze({ x: 62, y: 48 }),
-    Object.freeze({ x: 64, y: 33 }), Object.freeze({ x: 78, y: 39 }),
-    Object.freeze({ x: 82, y: 24 }), Object.freeze({ x: 90, y: 12 })
-  ]);
   let stickers = [];
   let history = [];
   let busy = false;
@@ -1819,11 +1812,12 @@
     closeStoryMenu();
     storyShell.hidden = false;
     storyTitleCopy.hidden = false;
-    storyMapScreen.hidden = true;
+    archiveExploration.hidden = true;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
     storyEncounterPanel.hidden = true;
-    storyPrimary.textContent = hasStoryProgress() ? 'Continue the Route' : 'Begin the Route';
+    storyShell.dataset.view = 'title';
+    storyPrimary.textContent = hasStoryProgress() ? 'Continue in the Archive' : 'Enter the Archive';
     const encounter = currentStoryEncounter();
     const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
     storyLocation.textContent = storyProgressState.storyCompleted ? 'The Dawn Vault is restored' : `${encounter.sector} · ${encounter.location} · ${encounterIndex + 1} of ${storyEncounters.length}`;
@@ -1832,46 +1826,33 @@
     storyPrimary.focus();
   }
 
-  function renderStoryMap(travel = false) {
+  function renderArchiveExploration() {
     const current = currentStoryEncounter();
     const currentIndex = storyEncounters.findIndex(encounter => encounter.id === current.id);
-    storyRoute.replaceChildren();
-    storyEncounters.forEach((encounter, index) => {
-      const node = document.createElement('li');
-      const completed = storyProgressState.completedEncounterIds.includes(encounter.id);
-      const state = completed ? 'completed' : index === currentIndex ? 'current' : 'ahead';
-      node.className = 'story-route-node';
-      node.dataset.state = state;
-      node.dataset.index = String(index + 1);
-      node.style.setProperty('--map-x', storyMapCoordinates[index].x);
-      node.style.setProperty('--map-y', storyMapCoordinates[index].y);
-      node.setAttribute('aria-label', `${index + 1}. ${encounter.location}: ${state}`);
-      if (state === 'current') node.setAttribute('aria-current', 'step');
-      storyRoute.append(node);
-    });
-    storyAyaMarker.style.setProperty('--aya-x', storyMapCoordinates[currentIndex].x);
-    storyAyaMarker.style.setProperty('--aya-y', storyMapCoordinates[currentIndex].y);
-    storyAyaMarker.classList.toggle('is-travelling', travel && !reducedMotion);
-    storyMapObjective.textContent = storyProgressState.storyCompleted ? 'The route is restored. Return to the Dawn Vault.' : `${current.location}: ${current.objective}`;
-    storyMapContinue.textContent = storyProgressState.storyCompleted ? 'Return to the Dawn Vault' : `Approach ${current.location}`;
     const completedCount = storyProgressState.completedEncounterIds.length;
-    storyRouteSummary.textContent = `${completedCount} of ${storyEncounters.length} seals restored. Current checkpoint: ${current.sector}, ${current.location}. The route is fixed; darker nodes remain ahead.`;
+    archiveSector.textContent = `${current.sector} · Seal ${currentIndex + 1} of ${storyEncounters.length}`;
+    archiveLocation.textContent = current.location;
+    archiveObjective.textContent = storyProgressState.storyCompleted ? 'Return to the restored Dawn Vault.' : current.objective;
+    archiveProgress.textContent = `${completedCount} of ${storyEncounters.length} seals restored · Latest refuge: ${completedCount ? current.sector : 'Archive entrance'}`;
+    archiveApproachSeal.textContent = storyProgressState.storyCompleted ? 'Enter the Dawn Vault' : `Approach ${current.location} seal`;
+    archiveThreat.querySelector('strong').textContent = 'Wraiths distant';
   }
 
-  function showStoryMap(travel = false) {
+  function showArchiveExploration() {
     closeStoryMenu();
     storyShell.hidden = false;
     storyTitleCopy.hidden = true;
-    storyMapScreen.hidden = false;
+    archiveExploration.hidden = false;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
     storyEncounterPanel.hidden = true;
-    document.body.dataset.experience = 'story-map';
+    storyShell.dataset.view = 'archive';
+    document.body.dataset.experience = 'archive';
     saveStoryProgress();
-    renderStoryMap(travel);
+    renderArchiveExploration();
     const encounter = currentStoryEncounter();
-    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'All twelve seals are restored.' : `${encounter.location} is the current checkpoint.`;
-    storyMapContinue.focus();
+    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'All twelve seals are restored. The Dawn Vault is open.' : `Exploration ready in ${encounter.sector}. ${encounter.location} is the active seal.`;
+    archiveApproachSeal.focus();
   }
 
   function showStoryBriefing() {
@@ -2028,7 +2009,7 @@
     storyVictoryTitle.textContent = finalEncounter ? 'The Dawn Vault opens' : `${encounter.location} secured`;
     const storyBeat = storyEncounterContent[encounter.id]?.success || 'The restored seal lights the next section of the route.';
     storyVictorySummary.textContent = finalEncounter ? `${storyBeat} Aya completed the final seal in ${storyPlayerMoves} moves.` : `${storyBeat} ${storyPlayerMoves} moves recorded; ${storyEncounters[encounterIndex + 1].location} is now open.`;
-    storyVictoryContinue.textContent = finalEncounter ? 'See the Restored Route' : 'Continue the Route';
+    storyVictoryContinue.textContent = finalEncounter ? 'Enter the Restored Dawn Vault' : 'Return to the Archive';
     storyEncounterStatus.textContent = `Seal restored in ${storyPlayerMoves} moves.`;
     storyVictoryContinue.focus();
   }
@@ -2060,7 +2041,7 @@
     history = [];
     storyPreparing = false;
     updateCubeLabel();
-    showStoryMap();
+    showArchiveExploration();
   }
 
   function continueStoryRoute() {
@@ -2072,7 +2053,7 @@
     fieldKitCube.hidden = true;
     history = [];
     initialize();
-    showStoryMap(true);
+    showArchiveExploration();
   }
 
   function showStoryEpilogue() {
@@ -2089,7 +2070,7 @@
     initialize();
     const totalMoves = Object.values(storyProgressState.bestMoveCounts).reduce((total, moves) => total + moves, 0);
     storyEpilogueStat.textContent = `Twelve seals restored${totalMoves ? ` · Best recorded route: ${totalMoves} moves` : ''}.`;
-    storyEncounterStatus.textContent = 'The Last Route is complete. Dawn has returned.';
+    storyEncounterStatus.textContent = 'The Living Archive is restored. Dawn has returned.';
     document.body.dataset.experience = 'story-encounter';
     storyReplayRoute.focus();
   }
@@ -2131,13 +2112,13 @@
     if (!await restoreSolvedCubeForModeChange()) return;
     clearChallengeState();
     closeFieldKitPanels();
-    showStoryTitle('Returned to the story. Timers and active Field Kit sessions were cleared.');
+    showStoryTitle('Returned to the Archive. Timers and active Field Kit sessions were cleared.');
   }
 
   function enterStoryRoute() {
-    showStoryMap();
+    showArchiveExploration();
     const encounter = currentStoryEncounter();
-    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'The completed route is open.' : `Route opened. ${encounter.location} is the current checkpoint.`;
+    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'The restored Archive is open.' : `Entered the Archive. Find the ${encounter.location} seal.`;
   }
 
   async function runSequence(moves, record) {
@@ -2669,20 +2650,20 @@
   storyFieldKit.addEventListener('click', openFieldKit);
   fieldKitExit.addEventListener('click', exitFieldKitToStory);
   storyNewGame.addEventListener('click', () => {
-    if (!window.confirm('Start a new route? This resets only Cube Warden story progress.')) return;
+    if (!window.confirm('Start a new Archive campaign? This resets only Cube Warden campaign progress.')) return;
     resetStoryProgress();
     storyShell.dataset.view = 'title';
     storyIntro.textContent = 'Twelve seals stand between Aya and the Dawn Vault. Restore each cube before the Void Wraiths close in.';
     showStoryTitle('New route ready at the Ash Gate.');
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
-  storyMapBack.addEventListener('click', () => showStoryTitle('Returned to the title. Route progress is saved.'));
-  storyMapContinue.addEventListener('click', () => {
+  archiveBack.addEventListener('click', () => showStoryTitle('Returned to the title. Archive progress is saved.'));
+  archiveApproachSeal.addEventListener('click', () => {
     if (storyProgressState.storyCompleted) showStoryEpilogue();
     else showStoryBriefing();
   });
   storyEnterSeal.addEventListener('click', startStoryEncounter);
-  storyBriefingMap.addEventListener('click', () => showStoryMap());
+  storyBriefingMap.addEventListener('click', showArchiveExploration);
   storyBriefingFieldKit.addEventListener('click', openFieldKit);
   storyTurnControls.addEventListener('click', event => {
     const button = event.target.closest('button[data-story-move]');
@@ -2702,7 +2683,7 @@
     resetStoryProgress();
     history = [];
     initialize();
-    showStoryTitle('A new route is ready at the Ash Gate.');
+    showStoryTitle('A new Archive campaign is ready at the Ash Gate.');
   });
   storyEpilogueFieldKit.addEventListener('click', openFieldKit);
   storyEpilogueTitle.addEventListener('click', () => showStoryTitle('The completed route is saved.'));

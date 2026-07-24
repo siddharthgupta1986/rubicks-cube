@@ -3,36 +3,46 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Guide Aya through a story-driven Rubik's Cube adventure.">
-  <title>Cube Warden: The Last Route</title>
-  <link rel="stylesheet" href="styles.css?v=cube-warden-3">
+  <meta name="description" content="Explore the Living Archive and solve Rubik's Cube seals to change the world.">
+  <title>Cube Warden: The Living Archive</title>
+  <link rel="stylesheet" href="styles.css?v=living-archive-1">
 </head>
 <body>
   <main class="app" aria-labelledby="page-title">
     <section class="story-shell" id="story-shell" aria-labelledby="page-title">
       <div class="story-title-copy" id="story-title-copy">
-        <p class="story-kicker">The Broken Archive is falling</p>
+        <p class="story-kicker">The Archive is awake</p>
         <h1 id="page-title">Cube Warden</h1>
-        <p class="story-subtitle">The Last Route</p>
-        <p class="story-intro">Twelve seals stand between Aya and the Dawn Vault. Restore each cube before the Void Wraiths close in.</p>
-        <button class="story-primary" type="button" id="story-primary">Begin the Route</button>
+        <p class="story-subtitle">The Living Archive</p>
+        <p class="story-intro">Walk the forgotten halls. Evade the Void Wraiths. Restore twelve cube seals and open the Dawn Vault.</p>
+        <button class="story-primary" type="button" id="story-primary">Enter the Archive</button>
         <p class="story-location" id="story-location">Ash Gate · Gatehouse</p>
       </div>
-      <section class="story-map-screen" id="story-map-screen" hidden aria-labelledby="story-map-title">
-        <div class="story-map-heading">
-          <div>
-            <p class="story-kicker">The Warden compass</p>
-            <h2 id="story-map-title">The Last Route</h2>
-            <p id="story-map-objective">The Gatehouse seal is waiting.</p>
+      <section class="archive-exploration" id="archive-exploration" hidden aria-labelledby="archive-location">
+        <canvas id="archive-canvas" aria-label="First-person view of the Living Archive"></canvas>
+        <div class="archive-vignette" aria-hidden="true"></div>
+        <header class="archive-hud">
+          <div class="archive-objective">
+            <p class="story-kicker" id="archive-sector">Ash Gate · Seal 1 of 12</p>
+            <h2 id="archive-location">Gatehouse</h2>
+            <p id="archive-objective">Find the Gatehouse cube seal.</p>
           </div>
-          <button type="button" id="story-map-back">Back</button>
+          <div class="archive-threat" id="archive-threat" role="status">
+            <span aria-hidden="true"></span>
+            <strong>Wraiths distant</strong>
+          </div>
+        </header>
+        <div class="archive-reticle" aria-hidden="true"></div>
+        <div class="archive-prompt">
+          <p id="archive-progress">0 of 12 seals restored · Latest refuge: Archive entrance</p>
+          <button class="story-primary" type="button" id="archive-approach-seal">Approach Gatehouse seal</button>
         </div>
-        <div class="story-map-visual" id="story-map-visual">
-          <ol class="story-route" id="story-route" aria-label="Twelve story checkpoints"></ol>
-          <img class="story-aya-marker" id="story-aya-marker" src="assets/cube-warden/aya-token.jpg" alt="">
+        <div class="archive-controls" aria-label="Exploration controls">
+          <span><kbd>WASD</kbd> move</span>
+          <span><kbd>Arrows</kbd> look</span>
+          <span><kbd>E</kbd> interact</span>
         </div>
-        <p class="story-route-summary" id="story-route-summary"></p>
-        <button class="story-primary" type="button" id="story-map-continue">Approach the Gatehouse</button>
+        <button class="archive-exit" type="button" id="archive-back">Return to title</button>
       </section>
       <button class="story-menu-toggle" type="button" id="story-menu-toggle" aria-expanded="false" aria-controls="story-menu" aria-label="Open game menu">Menu</button>
       <section class="story-menu" id="story-menu" role="dialog" aria-modal="true" hidden aria-label="Game menu">
@@ -42,7 +52,7 @@
         </div>
         <button type="button" id="story-new-game">New Game</button>
         <button type="button" id="story-field-kit">Open Field Kit</button>
-        <p>Cube settings, accessibility, Academy training, and practice tools live in the Field Kit.</p>
+        <p>Cube settings, accessibility, Academy training, and practice tools remain available in the Field Kit.</p>
       </section>
       <p class="story-shell-status" id="story-shell-status" role="status" aria-live="polite"></p>
     </section>
@@ -59,7 +69,7 @@
         </div>
         <div class="story-encounter-actions">
           <button class="story-primary" type="button" id="story-enter-seal">Enter Seal</button>
-          <button type="button" id="story-briefing-map">Return to Map</button>
+          <button type="button" id="story-briefing-map">Return to Archive</button>
           <button type="button" id="story-briefing-field-kit">Open Field Kit</button>
         </div>
       </div>
@@ -95,7 +105,7 @@
         <div class="story-encounter-actions">
           <button type="button" id="story-hint">Ask Compass for a Hint</button>
           <button type="button" id="story-retry">Retry Seal</button>
-          <button type="button" id="story-gameplay-map">Return to Map</button>
+          <button type="button" id="story-gameplay-map">Return to Archive</button>
           <button type="button" id="story-gameplay-field-kit">Open Field Kit</button>
         </div>
         <p class="story-hint-text" id="story-hint-text" hidden></p>
@@ -107,7 +117,7 @@
         <p>Aya's compass protected the checkpoint. Catch your breath and try the same cube again.</p>
         <div class="story-encounter-actions">
           <button class="story-primary" type="button" id="story-failure-retry">Retry from Checkpoint</button>
-          <button type="button" id="story-failure-map">Return to Map</button>
+          <button type="button" id="story-failure-map">Return to Archive</button>
           <button type="button" id="story-failure-field-kit">Open Field Kit</button>
         </div>
       </div>
@@ -116,10 +126,10 @@
         <p class="story-kicker">Seal restored</p>
         <h1 id="story-victory-title">Gatehouse secured</h1>
         <p id="story-victory-summary"></p>
-        <button class="story-primary" type="button" id="story-victory-continue">Continue the Route</button>
+        <button class="story-primary" type="button" id="story-victory-continue">Return to the Archive</button>
       </div>
       <div class="story-epilogue" id="story-epilogue" hidden>
-        <p class="story-kicker">The Last Route · Complete</p>
+        <p class="story-kicker">The Living Archive · Complete</p>
         <h1>Dawn returns</h1>
         <p>The final cube settles into six solid faces. Light travels backward through every restored seal, and the Void Wraiths break into harmless shards of shadow. Aya opens the Archive doors to morning.</p>
         <p class="story-epilogue-stat" id="story-epilogue-stat">Twelve seals restored.</p>
