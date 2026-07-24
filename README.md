@@ -25,6 +25,7 @@ Then visit `http://127.0.0.1:4173`.
 - A five-step pursuit system, three-level hints, family-safe failure, and checkpoint retry.
 - Versioned `rubiks-cube.archive.v2` campaign progress that remains separate from legacy Story and Cube Academy data.
 - Original local artwork under `assets/cube-warden/`; the game makes no network requests.
+- A local 1536×1024 original material atlas gives every sector a distinct high-resolution surface language, with a procedural fallback.
 - Six-face CSS 3D cube; drag to inspect every side.
 - Clockwise and counter-clockwise turns for all six faces.
 - Legal randomized shuffles and deterministic reversal-based solving.

@@ -362,10 +362,13 @@
     arrowright: 'turnRight'
   });
   const archiveMaterials = Object.freeze({
-    stone: Object.freeze({ tint: Object.freeze([.64,.72,.70]), atlas: Object.freeze([0,0,.5,.5]) }),
-    iron: Object.freeze({ tint: Object.freeze([.58,.49,.38]), atlas: Object.freeze([.5,0,1,.5]) }),
-    floor: Object.freeze({ tint: Object.freeze([.72,.68,.55]), atlas: Object.freeze([0,.5,.5,1]) }),
-    seal: Object.freeze({ tint: Object.freeze([1,.76,.28]), atlas: Object.freeze([.5,.5,1,1]) })
+    ash: Object.freeze({ tint: Object.freeze([.9,.94,.92]), atlas: Object.freeze([0,0,1/3,.5]) }),
+    glass: Object.freeze({ tint: Object.freeze([.88,.94,1]), atlas: Object.freeze([1/3,0,2/3,.5]) }),
+    sunken: Object.freeze({ tint: Object.freeze([.72,.92,.9]), atlas: Object.freeze([2/3,0,1,.5]) }),
+    iron: Object.freeze({ tint: Object.freeze([.96,.86,.68]), atlas: Object.freeze([0,.5,1/3,1]) }),
+    star: Object.freeze({ tint: Object.freeze([.78,.84,1]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
+    dawn: Object.freeze({ tint: Object.freeze([1,.96,.82]), atlas: Object.freeze([2/3,.5,1,1]) }),
+    seal: Object.freeze({ tint: Object.freeze([1.25,.86,.32]), atlas: Object.freeze([2/3,.5,1,1]) })
   });
   const archiveWorld = Object.freeze({
     bounds: Object.freeze({ minimum: Object.freeze([-6,0,-182]), maximum: Object.freeze([104,5,5]) }),
@@ -2108,13 +2111,24 @@
   }
 
   function addArchiveQuad(vertices, a, b, c, d, materialName, tile = [1,1]) {
-    const material = archiveMaterials[materialName] || archiveMaterials.stone;
+    const material = archiveMaterials[materialName] || archiveMaterials.ash;
     const [u0,v0,u1,v1] = material.atlas;
     const inset = .002;
     const uv = [[u0+inset,v0+inset],[u1-inset,v0+inset],[u1-inset,v1-inset],[u0+inset,v1-inset]];
     [[a,uv[0]],[b,uv[1]],[c,uv[2]],[a,uv[0]],[c,uv[2]],[d,uv[3]]].forEach(([point,texturePoint]) => {
       vertices.push(...point, ...material.tint, ...texturePoint);
     });
+  }
+
+  function archiveSectorMaterial(id, originalMaterial) {
+    if (originalMaterial === 'seal' || id.includes('seal')) return 'seal';
+    if (/gatehouse|compass|ash/.test(id)) return 'ash';
+    if (/glass|chapel|mirror|bridge/.test(id)) return 'glass';
+    if (/lantern|flooded|sunken/.test(id)) return 'sunken';
+    if (/gear|furnace|iron/.test(id)) return 'iron';
+    if (/star|observatory|clock/.test(id)) return 'star';
+    if (/warden|vault|dawn/.test(id)) return 'dawn';
+    return originalMaterial === 'iron' ? 'iron' : 'ash';
   }
 
   function addArchiveBox(vertices, minimum, maximum, materialName) {
@@ -2137,77 +2151,77 @@
 
   function createArchiveBootstrapGeometry() {
     const vertices = [];
-    archiveWorld.surfaces.forEach(surface => addArchiveQuad(vertices, ...surface.points, surface.material, surface.tile));
+    archiveWorld.surfaces.forEach(surface => addArchiveQuad(vertices, ...surface.points, archiveSectorMaterial(surface.id, surface.material), surface.tile));
     archiveWorld.solids.forEach(solid => {
       const progress = solid.opensWith ? archiveWorldChangeProgress(solid.opensWith) : 0;
       const travel = (solid.travel || 0) * progress;
       const minimum = [solid.minimum[0], solid.minimum[1] + travel, solid.minimum[2]];
       const maximum = [solid.maximum[0], solid.maximum[1] + travel, solid.maximum[2]];
-      addArchiveBox(vertices, minimum, maximum, solid.material);
+      addArchiveBox(vertices, minimum, maximum, archiveSectorMaterial(solid.id, solid.material));
     });
     return new Float32Array(vertices);
   }
 
   function createArchiveTexture(gl) {
     const source = document.createElement('canvas');
-    source.width = 512;
+    source.width = 768;
     source.height = 512;
     const context = source.getContext('2d');
-    const drawNoise = (x, y, size, base, mortar, pattern) => {
+    const palette = [
+      ['#252d2c','#75807b'], ['#5b625f','#b99755'], ['#12363e','#33757a'],
+      ['#63351f','#b27a3d'], ['#14223d','#8b7a4b'], ['#d8d0b9','#aa7d32']
+    ];
+    const drawFallbackCell = (index, base, mortar) => {
+      const x = index % 3 * 256;
+      const y = Math.floor(index / 3) * 256;
       context.fillStyle = base;
-      context.fillRect(x, y, size, size);
+      context.fillRect(x, y, 256, 256);
       context.strokeStyle = mortar;
-      context.lineWidth = 3;
-      pattern(context, x, y, size);
-      for (let index = 0; index < 900; index += 1) {
-        const px = x + (index * 83 % size);
-        const py = y + (index * 47 % size);
-        const alpha = .025 + (index % 7) * .006;
+      context.lineWidth = 4;
+      for (let row = 0; row <= 256; row += 48) {
+        context.beginPath();
+        context.moveTo(x, y + row);
+        context.lineTo(x + 256, y + row);
+        context.stroke();
+      }
+      for (let column = 0; column <= 256; column += 64) {
+        context.beginPath();
+        context.moveTo(x + column, y);
+        context.lineTo(x + column, y + 256);
+        context.stroke();
+      }
+      for (let speck = 0; speck < 700; speck += 1) {
+        const px = x + (speck * 83 % 256);
+        const py = y + (speck * 47 % 256);
+        const alpha = .025 + (speck % 7) * .008;
         context.fillStyle = `rgba(255,255,255,${alpha})`;
-        context.fillRect(px, py, 1 + index % 2, 1 + index % 2);
+        context.fillRect(px, py, 1 + speck % 2, 1 + speck % 2);
       }
     };
-    drawNoise(0,0,256,'#344443','#172321',(ctx,x,y,size) => {
-      for (let row = 0; row <= size; row += 48) {
-        ctx.beginPath(); ctx.moveTo(x,y+row); ctx.lineTo(x+size,y+row); ctx.stroke();
-        const offset = row % 96 ? 34 : 0;
-        for (let column = offset; column <= size; column += 68) {
-          ctx.beginPath(); ctx.moveTo(x+column,y+row); ctx.lineTo(x+column,y+Math.min(size,row+48)); ctx.stroke();
-        }
-      }
-    });
-    drawNoise(256,0,256,'#594939','#241f1b',(ctx,x,y,size) => {
-      for (let line = 0; line <= size; line += 28) {
-        ctx.beginPath(); ctx.moveTo(x+line,y); ctx.lineTo(x+line,y+size); ctx.stroke();
-      }
-      ctx.fillStyle = '#8c6a3e';
-      for (let rivet = 14; rivet < size; rivet += 56) ctx.fillRect(x+rivet,y+14,5,5);
-    });
-    drawNoise(0,256,256,'#4f5148','#292d2b',(ctx,x,y,size) => {
-      for (let line = 0; line <= size; line += 64) {
-        ctx.beginPath(); ctx.moveTo(x+line,y); ctx.lineTo(x+line,y+size); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(x,y+line); ctx.lineTo(x+size,y+line); ctx.stroke();
-      }
-    });
-    const sealGradient = context.createRadialGradient(384,384,12,384,384,120);
-    sealGradient.addColorStop(0,'#fff0a1');
-    sealGradient.addColorStop(.38,'#d9982c');
-    sealGradient.addColorStop(1,'#4b2d12');
-    context.fillStyle = sealGradient;
-    context.fillRect(256,256,256,256);
-    context.strokeStyle = '#f5c85d';
-    context.lineWidth = 5;
-    for (let ring = 34; ring < 122; ring += 24) {
-      context.beginPath(); context.arc(384,384,ring,0,Math.PI*2); context.stroke();
-    }
+    palette.forEach((colors, index) => drawFallbackCell(index, ...colors));
     const texture = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
-    gl.generateMipmap(gl.TEXTURE_2D);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    const upload = imageSource => {
+      gl.bindTexture(gl.TEXTURE_2D, texture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, imageSource);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    };
+    upload(source);
+    archiveCanvas.dataset.materialAtlas = 'procedural-fallback';
+    archiveCanvas.dataset.materialResolution = `${source.width}x${source.height}`;
+    const highResolutionAtlas = new Image();
+    highResolutionAtlas.addEventListener('load', () => {
+      upload(highResolutionAtlas);
+      archiveCanvas.dataset.materialAtlas = 'sector-material-atlas.png';
+      archiveCanvas.dataset.materialResolution = `${highResolutionAtlas.naturalWidth}x${highResolutionAtlas.naturalHeight}`;
+    }, { once: true });
+    highResolutionAtlas.addEventListener('error', () => {
+      archiveCanvas.dataset.materialAtlas = 'procedural-fallback';
+    }, { once: true });
+    highResolutionAtlas.src = 'assets/cube-warden/sector-material-atlas.png';
     return texture;
   }
 

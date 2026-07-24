@@ -12,6 +12,9 @@ images.
 - `aya-token.jpg`: full-body character artwork for Aya.
 - `void-wraiths.jpg`: abstract shard-like Void Wraith pursuit artwork.
 - `encounter-chamber.jpg`: empty seal chamber for the interactive cube.
+- `sector-material-atlas.png`: 1536×1024 six-cell WebGL material atlas for
+  Ash Gate, Glass Quarter, Sunken Stacks, Iron Depths, Star Tower, and Warden
+  Keep/Dawn Vault.
 
 The production files are resized JPEG derivatives of the generated PNG sources
 to keep the dependency-free static app lightweight. Interface text and required
@@ -24,3 +27,10 @@ archive architecture, charcoal and mineral teal foundations, warm gold route
 light, restrained red warnings, and physical cube geometry. Prompts explicitly
 excluded weapons, gore, copyrighted characters, franchise resemblance, logos,
 watermarks, and embedded text.
+
+The sector atlas was generated with the built-in image-generation tool on
+2026-07-24. Its production prompt requested an orthographic 3×2 atlas of
+ash-black fortress stone, cracked glass and gold masonry, water-dark teal
+library stone, oxidized iron and brass machinery, midnight-blue star stone, and
+ivory Dawn Vault stone. It explicitly excluded text, symbols, logos, characters,
+watermarks, UI, and recognizable franchise imagery.
