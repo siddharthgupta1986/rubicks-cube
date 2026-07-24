@@ -19,7 +19,7 @@
         <p class="story-location" id="story-location">Ash Gate · Gatehouse</p>
       </div>
       <section class="archive-exploration" id="archive-exploration" hidden aria-labelledby="archive-location">
-        <canvas id="archive-canvas" aria-label="First-person view of the Living Archive"></canvas>
+        <canvas id="archive-canvas" tabindex="0" aria-label="First-person view of the Living Archive. Click to enable mouse look."></canvas>
         <div class="archive-vignette" aria-hidden="true"></div>
         <header class="archive-hud">
           <div class="archive-objective">
@@ -41,6 +41,7 @@
           <span><kbd>WASD</kbd> move</span>
           <span><kbd>Arrows</kbd> look</span>
           <span><kbd>E</kbd> interact</span>
+          <span>Click view for mouse look</span>
         </div>
         <button class="archive-exit" type="button" id="archive-back">Return to title</button>
       </section>
@@ -360,6 +361,6 @@
       </div>
     </section>
   </main>
-  <script src="cube.js?v=living-archive-7"></script>
+  <script src="cube.js?v=living-archive-8"></script>
 </body>
 </html>
