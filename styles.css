@@ -55,6 +55,8 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .archive-reticle::after { width: 1px; height: 26px; }
 .archive-prompt { position: absolute; z-index: 2; left: 50%; bottom: 34px; width: min(620px, calc(100% - 40px)); padding: 14px; transform: translateX(-50%); text-align: center; background: rgba(5,12,15,.78); backdrop-filter: blur(10px); }
 .archive-prompt p { margin: 0 0 10px; color: #c7d4d5; font-size: .78rem; }
+.archive-prompt #archive-interaction-status { margin-bottom: 0; color: #f2d894; font-weight: 750; }
+.archive-prompt #archive-interaction-status:has(+ #archive-approach-seal:not([hidden])) { margin-bottom: 10px; }
 .archive-controls { position: absolute; z-index: 2; left: 22px; bottom: 22px; display: flex; flex-wrap: wrap; gap: 8px 12px; max-width: 230px; color: #c7d4d5; font-size: .7rem; }
 .archive-controls kbd { padding: 3px 5px; border: 1px solid rgba(255,255,255,.34); border-radius: 4px; color: #fff; background: rgba(0,0,0,.35); font: 700 .68rem ui-monospace, SFMono-Regular, Menlo, monospace; }
 .archive-exit { position: absolute; z-index: 2; right: 22px; bottom: 22px; border-color: rgba(255,255,255,.42); color: #fff; background: rgba(5,12,15,.78); }
