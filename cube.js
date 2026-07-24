@@ -11,6 +11,19 @@
   };
   const cube = document.getElementById('cube');
   const viewport = document.getElementById('cube-viewport');
+  const storyShell = document.getElementById('story-shell');
+  const storyPrimary = document.getElementById('story-primary');
+  const storyLocation = document.getElementById('story-location');
+  const storyIntro = document.querySelector('.story-intro');
+  const storyMenuToggle = document.getElementById('story-menu-toggle');
+  const storyMenu = document.getElementById('story-menu');
+  const storyMenuClose = document.getElementById('story-menu-close');
+  const storyNewGame = document.getElementById('story-new-game');
+  const storyFieldKit = document.getElementById('story-field-kit');
+  const storyShellStatus = document.getElementById('story-shell-status');
+  const fieldKitContent = document.getElementById('field-kit-content');
+  const fieldKitCube = document.getElementById('field-kit-cube');
+  const fieldKitExit = document.getElementById('field-kit-exit');
   const shuffleButton = document.getElementById('shuffle');
   const dailyChallengeButton = document.getElementById('daily-challenge');
   const speedrunToggle = document.getElementById('speedrun-toggle');
@@ -129,6 +142,7 @@
   const feedbackStorageKey = 'rubiks-cube.feedback.v1';
   const twoPlayerHistoryStorageKey = 'rubiks-cube.two-player-history.v1';
   const academyStorageKey = 'rubiks-cube.academy.v1';
+  const storyStorageKey = 'rubiks-cube.story.v1';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -1459,6 +1473,50 @@
     controls.disabled = value;
   }
 
+  function hasStoryProgress() {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(storyStorageKey) || 'null');
+      return Boolean(saved && saved.version === 1);
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function closeStoryMenu() {
+    storyMenu.hidden = true;
+    storyMenuToggle.setAttribute('aria-expanded', 'false');
+  }
+
+  function showStoryTitle(message = '') {
+    closeStoryMenu();
+    storyShell.hidden = false;
+    fieldKitContent.hidden = true;
+    fieldKitCube.hidden = true;
+    storyPrimary.textContent = hasStoryProgress() ? 'Continue the Route' : 'Begin the Route';
+    storyLocation.textContent = hasStoryProgress() ? 'The route is waiting' : 'Ash Gate · Gatehouse';
+    storyShellStatus.textContent = message;
+    document.body.dataset.experience = 'story';
+    storyPrimary.focus();
+  }
+
+  function openFieldKit() {
+    closeStoryMenu();
+    storyShell.hidden = true;
+    fieldKitContent.hidden = false;
+    fieldKitCube.hidden = false;
+    document.body.dataset.experience = 'field-kit';
+    status.textContent = 'Field Kit opened. Story progress is unchanged.';
+    fieldKitExit.focus();
+  }
+
+  function enterStoryRoute() {
+    storyShell.dataset.view = 'route';
+    storyPrimary.textContent = 'Enter the Gatehouse';
+    storyLocation.textContent = 'Checkpoint 1 of 12 · Ash Gate';
+    storyIntro.textContent = 'The Warden compass points to the Gatehouse. One route remains, and the first cube seal is waiting.';
+    storyShellStatus.textContent = 'Route opened. Gatehouse is the first checkpoint.';
+  }
+
   async function runSequence(moves, record) {
     setBusy(true);
     cube.classList.add('is-sequencing');
@@ -1972,6 +2030,26 @@
     const button = event.target.closest('[data-academy-action]');
     if (button) handleAcademyAction(button.dataset.academyAction);
   });
+  storyMenuToggle.addEventListener('click', () => {
+    const opening = storyMenu.hidden;
+    storyMenu.hidden = !opening;
+    storyMenuToggle.setAttribute('aria-expanded', String(opening));
+    if (opening) storyMenuClose.focus();
+  });
+  storyMenuClose.addEventListener('click', () => {
+    closeStoryMenu();
+    storyMenuToggle.focus();
+  });
+  storyFieldKit.addEventListener('click', openFieldKit);
+  fieldKitExit.addEventListener('click', () => showStoryTitle('Returned to the story. Cube state is unchanged.'));
+  storyNewGame.addEventListener('click', () => {
+    if (!window.confirm('Start a new route? This resets only Cube Warden story progress.')) return;
+    try { window.localStorage.removeItem(storyStorageKey); } catch (error) { /* optional */ }
+    storyShell.dataset.view = 'title';
+    storyIntro.textContent = 'Twelve seals stand between Aya and the Dawn Vault. Restore each cube before the Void Wraiths close in.';
+    showStoryTitle('New route ready at the Ash Gate.');
+  });
+  storyPrimary.addEventListener('click', enterStoryRoute);
 
   viewport.addEventListener('pointerdown', event => {
     if (busy) return;
@@ -2075,6 +2153,7 @@
   academyProgressState = loadAcademyProgress();
   renderAcademyDeck();
   setAcademyScreen('journey');
+  showStoryTitle();
 
   window.RubiksCubeChallenge = Object.freeze({
     getLocalDateKey,
