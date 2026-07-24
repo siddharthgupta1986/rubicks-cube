@@ -245,10 +245,10 @@
     'flooded-archive': Object.freeze({ x: 60, z: -69, yaw: 0 }),
     'gearworks': Object.freeze({ x: 63, z: -86, yaw: Math.PI / 2 }),
     'furnace-passage': Object.freeze({ x: 76, z: -93, yaw: 0 }),
-    'observatory': Object.freeze({ x: 108, z: -126, yaw: Math.PI / 2 }),
-    'clock-tower': Object.freeze({ x: 122, z: -142, yaw: 0 }),
-    'wardens-door': Object.freeze({ x: 138, z: -156, yaw: Math.PI / 2 }),
-    'dawn-vault': Object.freeze({ x: 152, z: -172, yaw: 0 })
+    'observatory': Object.freeze({ x: 76, z: -121, yaw: 0 }),
+    'clock-tower': Object.freeze({ x: 76, z: -134, yaw: 0 }),
+    'wardens-door': Object.freeze({ x: 84, z: -150, yaw: Math.PI / 2 }),
+    'dawn-vault': Object.freeze({ x: 100, z: -158, yaw: 0 })
   });
   const storyEncounterContent = {
     gatehouse: Object.freeze({
@@ -364,7 +364,7 @@
     seal: Object.freeze({ tint: Object.freeze([1,.76,.28]), atlas: Object.freeze([.5,.5,1,1]) })
   });
   const archiveWorld = Object.freeze({
-    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-118]), maximum: Object.freeze([82,5,5]) }),
+    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-182]), maximum: Object.freeze([104,5,5]) }),
     surfaces: Object.freeze([
       Object.freeze({ id: 'gatehouse-floor', points: Object.freeze([[-6,0,5],[6,0,5],[6,0,-28],[-6,0,-28]]), material: 'floor', tile: Object.freeze([5,12]) }),
       Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) }),
@@ -381,7 +381,12 @@
       Object.freeze({ id: 'flooded-ceiling', points: Object.freeze([[54,5,-90],[66,5,-90],[66,5,-66],[54,5,-66]]), material: 'stone', tile: Object.freeze([5,9]) }),
       Object.freeze({ id: 'gearworks-floor', points: Object.freeze([[54,0,-82],[82,0,-82],[82,0,-90],[54,0,-90]]), material: 'iron', tile: Object.freeze([11,3]) }),
       Object.freeze({ id: 'gearworks-ceiling', points: Object.freeze([[54,5,-90],[82,5,-90],[82,5,-82],[54,5,-82]]), material: 'stone', tile: Object.freeze([11,3]) }),
-      Object.freeze({ id: 'furnace-floor', points: Object.freeze([[70,0,-90],[82,0,-90],[82,0,-118],[70,0,-118]]), material: 'iron', tile: Object.freeze([5,11]) })
+      Object.freeze({ id: 'furnace-floor', points: Object.freeze([[70,0,-90],[82,0,-90],[82,0,-118],[70,0,-118]]), material: 'iron', tile: Object.freeze([5,11]) }),
+      Object.freeze({ id: 'star-tower-floor', points: Object.freeze([[72,0,-118],[80,0,-118],[80,0,-146],[72,0,-146]]), material: 'floor', tile: Object.freeze([3,11]) }),
+      Object.freeze({ id: 'star-tower-ceiling', points: Object.freeze([[72,5,-146],[80,5,-146],[80,5,-118],[72,5,-118]]), material: 'stone', tile: Object.freeze([3,11]) }),
+      Object.freeze({ id: 'warden-gallery-floor', points: Object.freeze([[72,0,-146],[104,0,-146],[104,0,-154],[72,0,-154]]), material: 'iron', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'warden-gallery-ceiling', points: Object.freeze([[72,5,-154],[104,5,-154],[104,5,-146],[72,5,-146]]), material: 'stone', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'dawn-vault-floor', points: Object.freeze([[96,0,-154],[104,0,-154],[104,0,-182],[96,0,-182]]), material: 'floor', tile: Object.freeze([3,11]) })
     ]),
     seals: Object.freeze([
       Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 }),
@@ -391,7 +396,11 @@
       Object.freeze({ id: 'lantern-rooms', position: Object.freeze([43,1.3,-62]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'flooded-archive', position: Object.freeze([60,1.3,-74]), interactionRadius: 2.15 }),
       Object.freeze({ id: 'gearworks', position: Object.freeze([72,1.3,-86]), interactionRadius: 2.15 }),
-      Object.freeze({ id: 'furnace-passage', position: Object.freeze([76,1.3,-103]), interactionRadius: 2.15 })
+      Object.freeze({ id: 'furnace-passage', position: Object.freeze([76,1.3,-103]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'observatory', position: Object.freeze([76,1.3,-126]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'clock-tower', position: Object.freeze([76,1.3,-140]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'wardens-door', position: Object.freeze([88,1.3,-150]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'dawn-vault', position: Object.freeze([100,1.3,-170]), interactionRadius: 2.15 })
     ]),
     solids: Object.freeze([
       Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
@@ -445,10 +454,31 @@
       Object.freeze({ id: 'gearworks-furnace-door', minimum: Object.freeze([70.3,0,-90.3]), maximum: Object.freeze([81.7,4.1,-89.7]), material: 'iron', collision: true, opensWith: 'gearworks', travel: 4.35 }),
       Object.freeze({ id: 'furnace-west-wall', minimum: Object.freeze([70,0,-118]), maximum: Object.freeze([70.3,5,-90]), material: 'stone', collision: true }),
       Object.freeze({ id: 'furnace-east-wall', minimum: Object.freeze([81.7,0,-118]), maximum: Object.freeze([82,5,-90]), material: 'stone', collision: true }),
-      Object.freeze({ id: 'furnace-south-wall', minimum: Object.freeze([70,0,-118]), maximum: Object.freeze([82,5,-117.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'furnace-south-west', minimum: Object.freeze([70,0,-118]), maximum: Object.freeze([72,5,-117.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'furnace-south-east', minimum: Object.freeze([80,0,-118]), maximum: Object.freeze([82,5,-117.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'furnace-dais', minimum: Object.freeze([74.35,0,-105.05]), maximum: Object.freeze([77.65,.78,-101.8]), material: 'iron', collision: true }),
       Object.freeze({ id: 'furnace-seal', minimum: Object.freeze([75.28,.78,-104.35]), maximum: Object.freeze([76.72,1.78,-102.95]), material: 'seal', collision: true }),
-      Object.freeze({ id: 'furnace-lift-shutter', minimum: Object.freeze([72,0,-117.7]), maximum: Object.freeze([80,4.1,-117.1]), material: 'iron', collision: true, opensWith: 'furnace-passage', travel: 4.35 })
+      Object.freeze({ id: 'furnace-lift-shutter', minimum: Object.freeze([72,0,-117.7]), maximum: Object.freeze([80,4.1,-117.1]), material: 'iron', collision: true, opensWith: 'furnace-passage', travel: 4.35 }),
+      Object.freeze({ id: 'star-west-wall', minimum: Object.freeze([72,0,-146]), maximum: Object.freeze([72.3,5,-118]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'star-east-wall', minimum: Object.freeze([79.7,0,-146]), maximum: Object.freeze([80,5,-118]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'observatory-dais', minimum: Object.freeze([74.35,0,-128.05]), maximum: Object.freeze([77.65,.78,-124.8]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'observatory-seal', minimum: Object.freeze([75.28,.78,-127.35]), maximum: Object.freeze([76.72,1.78,-125.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'observatory-clock-door', minimum: Object.freeze([72.3,0,-132.3]), maximum: Object.freeze([79.7,4.1,-131.7]), material: 'iron', collision: true, opensWith: 'observatory', travel: 4.35 }),
+      Object.freeze({ id: 'clock-dais', minimum: Object.freeze([74.35,0,-142.05]), maximum: Object.freeze([77.65,.78,-138.8]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'clock-seal', minimum: Object.freeze([75.28,.78,-141.35]), maximum: Object.freeze([76.72,1.78,-139.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'clock-warden-door', minimum: Object.freeze([79.7,0,-145.7]), maximum: Object.freeze([80.3,4.1,-132.3]), material: 'iron', collision: true, opensWith: 'clock-tower', travel: 4.35 }),
+      Object.freeze({ id: 'warden-north-wall', minimum: Object.freeze([84,0,-146.3]), maximum: Object.freeze([104,5,-146]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-south-wall', minimum: Object.freeze([72,0,-154]), maximum: Object.freeze([96,5,-153.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-east-wall', minimum: Object.freeze([103.7,0,-154]), maximum: Object.freeze([104,5,-146]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'warden-dais', minimum: Object.freeze([86.35,0,-151.65]), maximum: Object.freeze([89.65,.78,-148.35]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'warden-seal', minimum: Object.freeze([87.28,.78,-150.7]), maximum: Object.freeze([88.72,1.78,-149.3]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'warden-vault-door', minimum: Object.freeze([96.3,0,-154.3]), maximum: Object.freeze([103.7,4.1,-153.7]), material: 'iron', collision: true, opensWith: 'wardens-door', travel: 4.35 }),
+      Object.freeze({ id: 'vault-west-wall', minimum: Object.freeze([96,0,-182]), maximum: Object.freeze([96.3,5,-154]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'vault-east-wall', minimum: Object.freeze([103.7,0,-182]), maximum: Object.freeze([104,5,-154]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'vault-south-wall', minimum: Object.freeze([96,0,-182]), maximum: Object.freeze([104,5,-181.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'dawn-dais', minimum: Object.freeze([98.35,0,-172.05]), maximum: Object.freeze([101.65,.78,-168.8]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'dawn-seal', minimum: Object.freeze([99.28,.78,-171.35]), maximum: Object.freeze([100.72,1.78,-169.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'dawn-roof-shutter', minimum: Object.freeze([96.3,0,-181.7]), maximum: Object.freeze([103.7,4.1,-181.1]), material: 'iron', collision: true, opensWith: 'dawn-vault', travel: 4.35 })
     ])
   });
   let dailyChallengeActive = false;
