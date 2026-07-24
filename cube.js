@@ -238,9 +238,9 @@
   const archiveCheckpointSpawns = Object.freeze({
     'archive-entrance': Object.freeze({ x: 0, z: 3.35, yaw: 0 }),
     'gatehouse': Object.freeze({ x: 0, z: -7.55, yaw: 0 }),
-    'compass-hall': Object.freeze({ x: 0, z: -30, yaw: 0 }),
-    'chapel-steps': Object.freeze({ x: 18, z: -42, yaw: Math.PI / 2 }),
-    'mirror-bridge': Object.freeze({ x: 35, z: -54, yaw: 0 }),
+    'compass-hall': Object.freeze({ x: 0, z: -30.5, yaw: 0 }),
+    'chapel-steps': Object.freeze({ x: 18, z: -43.5, yaw: 0 }),
+    'mirror-bridge': Object.freeze({ x: 28, z: -61.5, yaw: Math.PI / 2 }),
     'lantern-rooms': Object.freeze({ x: 48, z: -70, yaw: Math.PI / 2 }),
     'flooded-archive': Object.freeze({ x: 62, z: -84, yaw: 0 }),
     'gearworks': Object.freeze({ x: 78, z: -96, yaw: Math.PI / 2 }),
@@ -323,7 +323,7 @@
   let archiveVertexBuffer = null;
   let archiveTexture = null;
   let archiveVertexCount = 0;
-  let archiveGeometryProgress = -1;
+  let archiveGeometrySignature = '';
   let archivePendingWorldChange = null;
   let archiveAnimationFrame = 0;
   let archiveLastFrameTime = 0;
@@ -364,13 +364,23 @@
     seal: Object.freeze({ tint: Object.freeze([1,.76,.28]), atlas: Object.freeze([.5,.5,1,1]) })
   });
   const archiveWorld = Object.freeze({
-    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([6,5,5]) }),
+    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-66]), maximum: Object.freeze([36,5,5]) }),
     surfaces: Object.freeze([
       Object.freeze({ id: 'gatehouse-floor', points: Object.freeze([[-6,0,5],[6,0,5],[6,0,-28],[-6,0,-28]]), material: 'floor', tile: Object.freeze([5,12]) }),
-      Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) })
+      Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) }),
+      Object.freeze({ id: 'compass-floor', points: Object.freeze([[-6,0,-28],[6,0,-28],[6,0,-42],[-6,0,-42]]), material: 'floor', tile: Object.freeze([5,6]) }),
+      Object.freeze({ id: 'compass-ceiling', points: Object.freeze([[-6,5,-42],[6,5,-42],[6,5,-28],[-6,5,-28]]), material: 'stone', tile: Object.freeze([5,6]) }),
+      Object.freeze({ id: 'glass-gallery-floor', points: Object.freeze([[-6,0,-34],[24,0,-34],[24,0,-42],[-6,0,-42]]), material: 'floor', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'glass-gallery-ceiling', points: Object.freeze([[-6,5,-42],[24,5,-42],[24,5,-34],[-6,5,-34]]), material: 'stone', tile: Object.freeze([12,3]) }),
+      Object.freeze({ id: 'chapel-floor', points: Object.freeze([[12,0,-42],[24,0,-42],[24,0,-66],[12,0,-66]]), material: 'floor', tile: Object.freeze([5,9]) }),
+      Object.freeze({ id: 'chapel-ceiling', points: Object.freeze([[12,5,-66],[24,5,-66],[24,5,-42],[12,5,-42]]), material: 'stone', tile: Object.freeze([5,9]) }),
+      Object.freeze({ id: 'mirror-bridge-floor', points: Object.freeze([[24,0,-58],[36,0,-58],[36,0,-66],[24,0,-66]]), material: 'iron', tile: Object.freeze([5,3]) })
     ]),
     seals: Object.freeze([
-      Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 })
+      Object.freeze({ id: 'gatehouse', position: Object.freeze([0,1.3,-9.1]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'compass-hall', position: Object.freeze([0,1.3,-33.2]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'chapel-steps', position: Object.freeze([18,1.3,-48]), interactionRadius: 2.15 }),
+      Object.freeze({ id: 'mirror-bridge', position: Object.freeze([31.5,1.3,-62]), interactionRadius: 2.15 })
     ]),
     solids: Object.freeze([
       Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
@@ -385,7 +395,27 @@
       Object.freeze({ id: 'gatehouse-door', minimum: Object.freeze([-2.15,0,-27.72]), maximum: Object.freeze([2.15,4.1,-27.12]), material: 'iron', collision: true, opensWith: 'gatehouse', travel: 4.35 }),
       Object.freeze({ id: 'gatehouse-back-west', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-2.15,5,-27.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'gatehouse-back-east', minimum: Object.freeze([2.15,0,-28]), maximum: Object.freeze([6,5,-27.7]), material: 'stone', collision: true }),
-      Object.freeze({ id: 'gatehouse-back-top', minimum: Object.freeze([-2.15,4.1,-28]), maximum: Object.freeze([2.15,5,-27.7]), material: 'stone', collision: true })
+      Object.freeze({ id: 'gatehouse-back-top', minimum: Object.freeze([-2.15,4.1,-28]), maximum: Object.freeze([2.15,5,-27.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'compass-west-wall', minimum: Object.freeze([-6,0,-42]), maximum: Object.freeze([-5.7,5,-28]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'compass-east-wall', minimum: Object.freeze([5.7,0,-34]), maximum: Object.freeze([6,5,-28]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'compass-dais', minimum: Object.freeze([-1.65,0,-35.25]), maximum: Object.freeze([1.65,.78,-32]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'compass-seal', minimum: Object.freeze([-.72,.78,-34.55]), maximum: Object.freeze([.72,1.78,-33.15]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'gallery-north-wall', minimum: Object.freeze([6,0,-34.3]), maximum: Object.freeze([24,5,-34]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gallery-south-wall', minimum: Object.freeze([-6,0,-42]), maximum: Object.freeze([12,5,-41.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'compass-gallery-door', minimum: Object.freeze([5.7,0,-40.8]), maximum: Object.freeze([6.3,4.1,-35.2]), material: 'iron', collision: true, opensWith: 'compass-hall', travel: 4.35 }),
+      Object.freeze({ id: 'gallery-east-wall', minimum: Object.freeze([23.7,0,-58]), maximum: Object.freeze([24,5,-34]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'chapel-west-wall', minimum: Object.freeze([12,0,-66]), maximum: Object.freeze([12.3,5,-42]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'chapel-east-wall', minimum: Object.freeze([23.7,0,-58]), maximum: Object.freeze([24,5,-42]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'chapel-south-wall', minimum: Object.freeze([12,0,-66]), maximum: Object.freeze([24,5,-65.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'chapel-dais', minimum: Object.freeze([16.35,0,-50.05]), maximum: Object.freeze([19.65,.78,-46.8]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'chapel-seal', minimum: Object.freeze([17.28,.78,-49.35]), maximum: Object.freeze([18.72,1.78,-47.95]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'chapel-bridge-door', minimum: Object.freeze([12.3,0,-56]), maximum: Object.freeze([23.7,4.1,-55.4]), material: 'iron', collision: true, opensWith: 'chapel-steps', travel: 4.35 }),
+      Object.freeze({ id: 'bridge-north-rail', minimum: Object.freeze([24,0,-58.3]), maximum: Object.freeze([36,1.15,-58]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'bridge-south-rail', minimum: Object.freeze([24,0,-66]), maximum: Object.freeze([36,1.15,-65.7]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'bridge-end-wall', minimum: Object.freeze([35.7,0,-66]), maximum: Object.freeze([36,5,-58]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'mirror-vault-shutter', minimum: Object.freeze([35.15,0,-64.8]), maximum: Object.freeze([35.7,4.1,-59.2]), material: 'iron', collision: true, opensWith: 'mirror-bridge', travel: 4.35 }),
+      Object.freeze({ id: 'mirror-dais', minimum: Object.freeze([29.85,0,-63.65]), maximum: Object.freeze([33.15,.78,-60.35]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'mirror-seal', minimum: Object.freeze([30.78,.78,-62.7]), maximum: Object.freeze([32.22,1.78,-61.3]), material: 'seal', collision: true })
     ])
   });
   let dailyChallengeActive = false;
@@ -2116,13 +2146,17 @@
       archiveVertexCount = geometry.length / 8;
       gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.DYNAMIC_DRAW);
-      archiveGeometryProgress = archiveWorldChangeProgress('gatehouse');
+      archiveGeometrySignature = archiveWorld.solids
+        .filter(solid => solid.opensWith)
+        .map(solid => `${solid.opensWith}:${archiveWorldChangeProgress(solid.opensWith).toFixed(3)}`)
+        .join('|');
       archiveTexture = createArchiveTexture(gl);
       archiveGl = gl;
       archiveRendererAvailable = true;
       archiveCanvas.dataset.vertices = String(archiveVertexCount);
       archiveCanvas.dataset.collisionSolids = String(archiveWorld.solids.filter(solid => solid.collision).length);
-      archiveCanvas.dataset.gatehouseDoor = archiveGeometryProgress.toFixed(2);
+      archiveCanvas.dataset.gatehouseDoor = archiveWorldChangeProgress('gatehouse').toFixed(2);
+      archiveCanvas.dataset.worldChanges = archiveGeometrySignature;
       archiveCanvas.dataset.storageKey = storyStorageKey;
       return true;
     } catch (error) {
@@ -2145,7 +2179,7 @@
   }
 
   function archivePositionBlocked(x, z) {
-    return archiveWorld.solids.some(solid => {
+    const blockingSolid = archiveWorld.solids.find(solid => {
       if (!solid.collision || solid.maximum[1] <= 0 || solid.minimum[1] >= archivePlayer.y + .15) return false;
       if (solid.opensWith && storyProgressState.completedEncounterIds.includes(solid.opensWith)) return false;
       return x + archivePlayer.radius > solid.minimum[0]
@@ -2153,6 +2187,8 @@
         && z + archivePlayer.radius > solid.minimum[2]
         && z - archivePlayer.radius < solid.maximum[2];
     });
+    archiveCanvas.dataset.blockedBy = blockingSolid?.id || '';
+    return Boolean(blockingSolid);
   }
 
   function moveArchivePlayer(delta) {
@@ -2237,7 +2273,7 @@
       progress: reducedMotion ? 1 : 0,
       startedAt: 0
     };
-    archiveGeometryProgress = -1;
+    archiveGeometrySignature = '';
   }
 
   function updateArchiveWorldChange(time) {
@@ -2246,18 +2282,23 @@
       archivePendingWorldChange.progress = Math.min(1, (time - archivePendingWorldChange.startedAt) / 1450);
       archiveCanvas.dataset.worldChange = `${archivePendingWorldChange.sealId}:${archivePendingWorldChange.progress.toFixed(2)}`;
       if (archivePendingWorldChange.progress >= 1) {
-        storyShellStatus.textContent = 'Gatehouse restored. The portcullis is fully open and the passage ahead is safe to enter.';
+        const restoredEncounter = storyEncounters.find(encounter => encounter.id === archivePendingWorldChange.sealId);
+        storyShellStatus.textContent = `${restoredEncounter?.location || 'Seal'} restored. The route mechanism is fully open and the passage ahead is safe to enter.`;
       }
     }
-    const progress = archiveWorldChangeProgress('gatehouse');
-    if (progress === archiveGeometryProgress || !archiveGl || !archiveVertexBuffer) return;
+    const geometrySignature = archiveWorld.solids
+      .filter(solid => solid.opensWith)
+      .map(solid => `${solid.opensWith}:${archiveWorldChangeProgress(solid.opensWith).toFixed(3)}`)
+      .join('|');
+    if (geometrySignature === archiveGeometrySignature || !archiveGl || !archiveVertexBuffer) return;
     const geometry = createArchiveBootstrapGeometry();
     archiveVertexCount = geometry.length / 8;
     archiveGl.bindBuffer(archiveGl.ARRAY_BUFFER, archiveVertexBuffer);
     archiveGl.bufferData(archiveGl.ARRAY_BUFFER, geometry, archiveGl.DYNAMIC_DRAW);
-    archiveGeometryProgress = progress;
+    archiveGeometrySignature = geometrySignature;
     archiveCanvas.dataset.vertices = String(archiveVertexCount);
-    archiveCanvas.dataset.gatehouseDoor = progress.toFixed(2);
+    archiveCanvas.dataset.gatehouseDoor = archiveWorldChangeProgress('gatehouse').toFixed(2);
+    archiveCanvas.dataset.worldChanges = geometrySignature;
   }
 
   function beginArchiveSealFocus() {
