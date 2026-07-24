@@ -15,6 +15,12 @@ assert.equal(globalThis.CubeWardenWraiths.hasLineOfSight({ x: 0, z: 0 }, { x: 4,
 assert.equal(globalThis.CubeWardenWraiths.hasLineOfSight({ x: 0, z: 3 }, { x: 4, z: 3 }, [wall]), true);
 assert.equal(globalThis.CubeWardenWraiths.hasLineOfSight({ x: 0, z: 0 }, { x: 4, z: 0 }, [lowDais]), true);
 assert.equal(globalThis.CubeWardenWraiths.hasLineOfSight({ x: 0, z: 0 }, { x: 4, z: 0 }, [door], ['gatehouse']), true);
+assert.deepEqual(globalThis.CubeWardenWraiths.chooseSafeSpawn(
+  [{ id: 'unsafe', x: 0, z: 0 }, { id: 'safe', x: 8, z: 0 }],
+  [{ x: 1, z: 0 }],
+  4
+), { id: 'safe', x: 8, z: 0 });
+assert.equal(globalThis.CubeWardenWraiths.chooseSafeSpawn([{ x: 0, z: 0 }], [{ x: 1, z: 0 }], 4), null);
 
 assert.deepEqual(simulation.snapshot()[0], {
   id: 'ash-wraith', state: 'patrol', x: 0, z: 0, headingX: 0, headingZ: -1, routeIndex: 1, stateElapsedMs: 0, lastKnown: null

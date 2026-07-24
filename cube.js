@@ -31,6 +31,8 @@
   const archiveProgress = document.getElementById('archive-progress');
   const archiveInteractionStatus = document.getElementById('archive-interaction-status');
   const archiveApproachSeal = document.getElementById('archive-approach-seal');
+  const archiveCapture = document.getElementById('archive-capture');
+  const archiveCaptureRecover = document.getElementById('archive-capture-recover');
   const archiveBack = document.getElementById('archive-back');
   const storyEncounterPanel = document.getElementById('story-encounter-panel');
   const storyBriefing = document.getElementById('story-briefing');
@@ -1987,11 +1989,18 @@
     restoreArchiveCheckpointPosition();
   }
 
-  function restoreArchiveCheckpointPosition() {
-    const spawn = archiveStateModel.resolveSpawn({
+  function restoreArchiveCheckpointPosition(avoidActors = []) {
+    const checkpointSpawn = archiveStateModel.resolveSpawn({
       ...storyProgressState,
       completedSealIds: storyProgressState.completedEncounterIds
     }, archiveCheckpointSpawns);
+    const candidates = [
+      checkpointSpawn,
+      ...Object.entries(archiveCheckpointSpawns).map(([id, spawn]) => ({ id, ...spawn }))
+    ];
+    const spawn = avoidActors.length
+      ? window.CubeWardenWraiths.chooseSafeSpawn(candidates, avoidActors, 4) || checkpointSpawn
+      : checkpointSpawn;
     archivePlayer.x = spawn.x;
     archivePlayer.z = spawn.z;
     archivePlayer.yaw = spawn.yaw;
@@ -2371,6 +2380,10 @@
       const distance = Math.hypot(actor.x - archivePlayer.x, actor.z - archivePlayer.z);
       return !result || distance < result.distance ? { ...actor, distance } : result;
     }, null);
+    if (nearest?.state === 'pursuit' && nearest.distance <= .72) {
+      captureArchivePlayer(nearest);
+      return;
+    }
     archiveCanvas.dataset.wraithCount = String(actors.length);
     archiveCanvas.dataset.wraithState = nearest?.state || 'unavailable';
     archiveCanvas.dataset.wraithDistance = nearest ? nearest.distance.toFixed(2) : 'unavailable';
@@ -2388,6 +2401,32 @@
     archiveThreat.setAttribute('aria-label', labels[threatState]);
     if (threatState !== archiveLastThreatState && (threatState === 'detection' || threatState === 'pursuit')) triggerFeedback('warning');
     archiveLastThreatState = threatState;
+  }
+
+  function captureArchivePlayer(wraith) {
+    setArchiveRuntimePhase('capture', { preserveSession: true });
+    archiveWraithSimulation.snapshot().forEach(actor => archiveWraithSimulation.signal(actor.id, 'reset'));
+    const resetActors = archiveWraithSimulation.snapshot();
+    restoreArchiveCheckpointPosition(resetActors);
+    archiveCanvas.dataset.capturedBy = wraith.id;
+    archiveCanvas.dataset.captureSpawnSafe = String(resetActors.every(actor => Math.hypot(actor.x - archivePlayer.x, actor.z - archivePlayer.z) >= 4));
+    archiveThreat.querySelector('strong').textContent = 'Captured · checkpoint protected';
+    archiveThreat.dataset.state = 'capture';
+    archiveThreat.setAttribute('aria-label', 'Captured. Checkpoint and seal progress protected.');
+    archiveCapture.hidden = false;
+    storyShellStatus.textContent = `Captured by ${wraith.id}. Seal progress is safe; the nearest clear refuge is ready.`;
+    triggerFeedback('warning');
+    archiveCaptureRecover.focus();
+  }
+
+  function recoverFromArchiveCapture() {
+    archiveCapture.hidden = true;
+    setArchiveRuntimePhase('exploration', { preserveSession: true });
+    renderArchiveExploration();
+    updateArchiveSealProximity(true);
+    startArchiveRenderer();
+    storyShellStatus.textContent = 'Checkpoint restored. The Wraith patrol reset to its authored route.';
+    archiveCanvas.focus();
   }
 
   function archiveSightBlocked(from, to) {
@@ -2523,6 +2562,7 @@
     updateArchivePlayerDiagnostics();
     updateArchiveSealProximity();
     updateArchiveWraithSimulation(delta);
+    if (archiveRuntimePhase !== 'exploration') return;
     const gl = archiveGl;
     const { width, height } = resizeArchiveCanvas();
     gl.viewport(0, 0, width, height);
@@ -2597,6 +2637,7 @@
       }
     }
     archiveRuntimePhase = nextPhase;
+    if (nextPhase !== 'capture') archiveCapture.hidden = true;
     document.body.dataset.archivePhase = nextPhase;
     archiveCanvas.dataset.phase = nextPhase;
   }
@@ -3523,6 +3564,7 @@
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
   archiveBack.addEventListener('click', () => showStoryTitle('Returned to the title. Archive progress is saved.'));
+  archiveCaptureRecover.addEventListener('click', recoverFromArchiveCapture);
   archiveApproachSeal.addEventListener('click', beginArchiveSealFocus);
   storyEnterSeal.addEventListener('click', startStoryEncounter);
   storyBriefingMap.addEventListener('click', showArchiveExploration);

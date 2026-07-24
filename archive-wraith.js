@@ -31,6 +31,10 @@
     return !blocked;
   }
 
+  function chooseSafeSpawn(candidates, actors, minimumDistance = 4) {
+    return candidates.find(candidate => actors.every(actor => Math.hypot(candidate.x - actor.x, candidate.z - actor.z) >= minimumDistance)) || null;
+  }
+
   function createSimulation(definitions, options = {}) {
     const detectionGraceMs = options.detectionGraceMs || 900;
     const searchDurationMs = options.searchDurationMs || 4200;
@@ -159,5 +163,5 @@
     return Object.freeze({ update, signal, snapshot });
   }
 
-  globalThis.CubeWardenWraiths = Object.freeze({ createSimulation, hasLineOfSight, states });
+  globalThis.CubeWardenWraiths = Object.freeze({ chooseSafeSpawn, createSimulation, hasLineOfSight, states });
 })();
