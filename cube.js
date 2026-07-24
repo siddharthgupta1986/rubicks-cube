@@ -38,6 +38,7 @@
   const storyEncounterObjective = document.getElementById('story-encounter-objective');
   const storyEnterSeal = document.getElementById('story-enter-seal');
   const storyBriefingMap = document.getElementById('story-briefing-map');
+  const storyBriefingFieldKit = document.getElementById('story-briefing-field-kit');
   const storyGameplay = document.getElementById('story-gameplay');
   const storyGameplaySector = document.getElementById('story-gameplay-sector');
   const storyGameplayTitle = document.getElementById('story-gameplay-title');
@@ -52,6 +53,7 @@
   const storyHintText = document.getElementById('story-hint-text');
   const storyRetry = document.getElementById('story-retry');
   const storyGameplayMap = document.getElementById('story-gameplay-map');
+  const storyGameplayFieldKit = document.getElementById('story-gameplay-field-kit');
   const storyVictory = document.getElementById('story-victory');
   const storyVictoryTitle = document.getElementById('story-victory-title');
   const storyVictorySummary = document.getElementById('story-victory-summary');
@@ -64,6 +66,7 @@
   const storyFailure = document.getElementById('story-failure');
   const storyFailureRetry = document.getElementById('story-failure-retry');
   const storyFailureMap = document.getElementById('story-failure-map');
+  const storyFailureFieldKit = document.getElementById('story-failure-field-kit');
   const storyEncounterStatus = document.getElementById('story-encounter-status');
   const fieldKitContent = document.getElementById('field-kit-content');
   const fieldKitCube = document.getElementById('field-kit-cube');
@@ -1137,6 +1140,15 @@
   }
 
   function clearChallengeState(preserve = '') {
+    if (preserve !== 'story') {
+      storyEncounterActive = false;
+      storyPreparing = false;
+      storyCheckpointIndex = 0;
+      storyPlayerMoves = 0;
+      storyPressure = 0;
+      storyStagnantMoves = 0;
+      storyHintIndex = 0;
+    }
     if (preserve !== 'speedrun' && speedrunState !== 'idle') resetSpeedrun();
     if (preserve !== 'daily') {
       dailyChallengeActive = false;
@@ -2053,7 +2065,29 @@
     storyReplayRoute.focus();
   }
 
-  function openFieldKit() {
+  async function restoreSolvedCubeForModeChange() {
+    if (busy) return false;
+    storyEncounterActive = false;
+    storyPreparing = true;
+    if (history.length) await runSequence([...history].reverse().map(inverse), false);
+    history = [];
+    initialize();
+    storyPreparing = false;
+    updateCubeLabel();
+    return true;
+  }
+
+  function closeFieldKitPanels() {
+    [speedrun, missions, replays, algorithms, stateTools, progressPanel, inputHelp, achievements, tutor, academyHud].forEach(panel => { panel.hidden = true; });
+    document.querySelectorAll('.legacy-tool').forEach(panel => { panel.hidden = true; });
+    [speedrunToggle, missionsToggle, replaysToggle, algorithmsToggle, stateToggle, progressToggle, inputToggle, achievementsToggle, tutorToggle].forEach(toggle => toggle.setAttribute('aria-expanded', 'false'));
+    tutorToggle.textContent = 'Guided solve';
+    controls.hidden = true;
+  }
+
+  async function openFieldKit() {
+    if (!await restoreSolvedCubeForModeChange()) return;
+    clearChallengeState();
     closeStoryMenu();
     storyShell.hidden = true;
     fieldKitContent.hidden = false;
@@ -2062,6 +2096,13 @@
     document.body.dataset.experience = 'field-kit';
     status.textContent = 'Field Kit opened. Story progress is unchanged.';
     fieldKitExit.focus();
+  }
+
+  async function exitFieldKitToStory() {
+    if (!await restoreSolvedCubeForModeChange()) return;
+    clearChallengeState();
+    closeFieldKitPanels();
+    showStoryTitle('Returned to the story. Timers and active Field Kit sessions were cleared.');
   }
 
   function enterStoryRoute() {
@@ -2594,7 +2635,7 @@
     storyMenuToggle.focus();
   });
   storyFieldKit.addEventListener('click', openFieldKit);
-  fieldKitExit.addEventListener('click', () => showStoryTitle('Returned to the story. Cube state is unchanged.'));
+  fieldKitExit.addEventListener('click', exitFieldKitToStory);
   storyNewGame.addEventListener('click', () => {
     if (!window.confirm('Start a new route? This resets only Cube Warden story progress.')) return;
     resetStoryProgress();
@@ -2610,6 +2651,7 @@
   });
   storyEnterSeal.addEventListener('click', startStoryEncounter);
   storyBriefingMap.addEventListener('click', () => showStoryMap());
+  storyBriefingFieldKit.addEventListener('click', openFieldKit);
   storyTurnControls.addEventListener('click', event => {
     const button = event.target.closest('button[data-story-move]');
     if (!button || busy || !storyEncounterActive) return;
@@ -2619,8 +2661,10 @@
   storyHint.addEventListener('click', useStoryHint);
   storyRetry.addEventListener('click', retryStoryEncounter);
   storyGameplayMap.addEventListener('click', leaveStoryEncounterToMap);
+  storyGameplayFieldKit.addEventListener('click', openFieldKit);
   storyFailureRetry.addEventListener('click', retryStoryEncounter);
   storyFailureMap.addEventListener('click', leaveStoryEncounterToMap);
+  storyFailureFieldKit.addEventListener('click', openFieldKit);
   storyVictoryContinue.addEventListener('click', continueStoryRoute);
   storyReplayRoute.addEventListener('click', () => {
     resetStoryProgress();
