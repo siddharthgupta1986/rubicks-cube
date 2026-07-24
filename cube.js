@@ -165,6 +165,22 @@
     cross: Object.freeze({ label: 'Cross-training view', x: -20, y: -42 }),
     reset: Object.freeze({ label: 'Reset view', x: -28, y: 36 })
   });
+  const storyVersion = 1;
+  const storyEncounters = Object.freeze([
+    Object.freeze({ id: 'gatehouse', sector: 'Ash Gate', location: 'Gatehouse', narrative: 'The first seal recognizes intent. Teach it the four-turn Warden signal.', objective: "Make R, U, R', U' in order.", setupMoves: Object.freeze([]), validatorId: 'sequence', progressId: 'sequence', targetMoves: 4, pressureBudget: 5, hints: Object.freeze(['Keep white on top and green facing you.', 'R turns the right face; U turns the top face.', "Use R, U, R', U'. The apostrophe means counter-clockwise."]) }),
+    Object.freeze({ id: 'compass-hall', sector: 'Ash Gate', location: 'Compass Hall', narrative: 'The compass has been turned away from dawn. Walk its last four steps backward.', objective: 'Return the cube to six solid-color faces.', setupMoves: Object.freeze(['R', 'U', "R'", "U'"]), validatorId: 'solved', progressId: 'solvedFaces', targetMoves: 4, pressureBudget: 5, hints: Object.freeze(['Undo moves in reverse order.', "The inverse of U' is U, and the inverse of R' is R.", "Use U, R, U', R'."]) }),
+    Object.freeze({ id: 'chapel-steps', sector: 'Glass Quarter', location: 'Chapel Steps', narrative: 'Two white lamps are dark on the chapel path. Raise their edge stones.', objective: 'Place at least two white edge stickers around the white center.', setupMoves: Object.freeze(['F', 'R', 'U', "R'", "U'", "F'"]), validatorId: 'whiteEdgesTwo', progressId: 'whiteEdges', targetMoves: 8, pressureBudget: 5, hints: Object.freeze(['Find pieces with white plus one other color.', 'Match an edge side color to its center before lifting it.', 'Use a double turn when a matched white edge is opposite the white face.']) }),
+    Object.freeze({ id: 'mirror-bridge', sector: 'Glass Quarter', location: 'Mirror Bridge', narrative: 'Four mirrors must agree before the bridge becomes solid.', objective: 'Build the white cross with all four side colors matched.', setupMoves: Object.freeze(['F2', 'R', 'U', "R'", "U'", 'L2']), validatorId: 'whiteCross', progressId: 'whiteCross', targetMoves: 14, pressureBudget: 5, hints: Object.freeze(['Solve one white edge at a time.', 'The side color must match its center as well as white facing up.', 'Keep completed cross edges safe while you place the next one.']) }),
+    Object.freeze({ id: 'lantern-rooms', sector: 'Sunken Stacks', location: 'Lantern Rooms', narrative: 'A corner lantern is loose. Seat it where its three colors meet.', objective: 'Place at least one white corner correctly.', setupMoves: Object.freeze(['R', 'D', "R'", "D'", 'F', 'D', "F'"]), validatorId: 'whiteCornerOne', progressId: 'whiteCorners', targetMoves: 10, pressureBudget: 5, hints: Object.freeze(['Find a corner with white and two side colors.', 'Bring it below the slot between its two matching centers.', "At front-right-bottom, repeat R', D', R, D until it seats."]) }),
+    Object.freeze({ id: 'flooded-archive', sector: 'Sunken Stacks', location: 'Flooded Archive', narrative: 'The lower shelves rise only when the first layer is whole.', objective: 'Complete the white face and its matching first side rows.', setupMoves: Object.freeze(['R', 'U', "R'", 'F', 'U', "F'", 'L', 'D', "L'"]), validatorId: 'firstLayer', progressId: 'firstLayer', targetMoves: 24, pressureBudget: 5, hints: Object.freeze(['Finish the white cross before placing corners.', 'Work one white corner at a time below its destination.', "Repeat R', D', R, D for a corner at front-right-bottom."]) }),
+    Object.freeze({ id: 'gearworks', sector: 'Iron Depths', location: 'Gearworks', narrative: 'One uncolored gear edge can restart the machine.', objective: 'Insert one correct middle-layer edge.', setupMoves: Object.freeze(['U', 'R', "U'", "R'", "U'", "F'", 'U', 'F']), validatorId: 'middleEdgeOne', progressId: 'middleEdges', targetMoves: 12, pressureBudget: 5, hints: Object.freeze(['Turn the cube so white is on the bottom.', 'Choose a top edge with no yellow and match its front color.', "For a right slot use U, R, U', R', U', F', U, F."]) }),
+    Object.freeze({ id: 'furnace-passage', sector: 'Iron Depths', location: 'Furnace Passage', narrative: 'Four channels must align to carry heat through the passage.', objective: 'Complete all four middle-layer edges.', setupMoves: Object.freeze(['R', 'U2', "R'", "U'", 'F', 'U', "F'", 'L', "U'", "L'"]), validatorId: 'middleLayer', progressId: 'middleLayer', targetMoves: 36, pressureBudget: 5, hints: Object.freeze(['Keep white on the bottom.', 'Match a non-yellow top edge to the front center first.', 'Use the right or mirrored left insertion for each edge.']) }),
+    Object.freeze({ id: 'observatory', sector: 'Star Tower', location: 'Observatory', narrative: 'The star lens needs a yellow cross to find the Dawn Vault.', objective: 'Form a yellow cross on the top face.', setupMoves: Object.freeze(['F', 'R', 'U', "R'", "U'", "F'"]), validatorId: 'yellowCross', progressId: 'yellowEdges', targetMoves: 12, pressureBudget: 5, hints: Object.freeze(['Only the four yellow edge stickers matter now.', 'Hold a yellow line horizontally or an L in the top-left.', "Use F, R, U, R', U', F' and repeat if needed."]) }),
+    Object.freeze({ id: 'clock-tower', sector: 'Star Tower', location: 'Clock Tower', narrative: 'Turn every golden dial upward before the last bell.', objective: 'Orient the complete yellow face upward.', setupMoves: Object.freeze(['R', 'U', "R'", 'U', 'R', 'U2', "R'"]), validatorId: 'yellowFace', progressId: 'yellowFace', targetMoves: 28, pressureBudget: 5, hints: Object.freeze(['Keep yellow on top throughout this seal.', 'Work with one unsolved top corner at front-right.', "Repeat R', D', R, D until that corner faces up, then turn only U."]) }),
+    Object.freeze({ id: 'wardens-door', sector: 'Warden Keep', location: "Warden's Door", narrative: 'The door knows every color. Put the final pieces in their true homes.', objective: 'Position the last-layer pieces so every side color matches.', setupMoves: Object.freeze(['U', 'R', "U'", "L'", 'U', "R'", "U'", 'L']), validatorId: 'lastLayerPositioned', progressId: 'solvedStickers', targetMoves: 34, pressureBudget: 5, hints: Object.freeze(['A corner is positioned when its three colors match nearby centers.', 'Hold one correct corner at front-right-top.', "Use U, R, U', L', U, R', U', L to cycle the others."]) }),
+    Object.freeze({ id: 'dawn-vault', sector: 'Warden Keep', location: 'Dawn Vault', narrative: 'The final seal contains every lesson. Restore all six faces and bring back the dawn.', objective: 'Return the entire cube to its solved state.', setupMoves: Object.freeze(['R', 'U', "R'", "U'", 'F2', 'D', 'L', "D'", "L'", 'B', 'U2', "B'"]), validatorId: 'solved', progressId: 'solvedStickers', targetMoves: 80, pressureBudget: 5, hints: Object.freeze(['Solve in layers: white, middle, then yellow.', 'Use the Field Kit lessons if you need to review an algorithm.', 'Follow the objective steps already learned; any valid full solve counts.']) })
+  ]);
+  const storyEncounterIds = new Set(storyEncounters.map(encounter => encounter.id));
   let stickers = [];
   let history = [];
   let busy = false;
@@ -204,6 +220,7 @@
   let twoPlayerHistory = [];
   let tutorStep = 0;
   let academyProgressState = { version: 1, completed: [], lastViewed: 0 };
+  let storyProgressState = null;
   const academyChapterTitles = ['Orientation', 'White cross', 'First layer', 'Middle layer', 'Yellow cross', 'Final solve'];
   let academyScreenState = 'journey';
   const lessonDrafts = [
@@ -1473,13 +1490,66 @@
     controls.disabled = value;
   }
 
-  function hasStoryProgress() {
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(storyStorageKey) || 'null');
-      return Boolean(saved && saved.version === 1);
-    } catch (error) {
-      return false;
+  function defaultStoryProgress() {
+    return {
+      version: storyVersion,
+      currentEncounterId: storyEncounters[0].id,
+      completedEncounterIds: [],
+      bestMoveCounts: {},
+      retries: 0,
+      storyCompleted: false,
+      updatedAt: ''
+    };
+  }
+
+  function sanitizeStoryProgress(value) {
+    if (!value || value.version !== storyVersion) return defaultStoryProgress();
+    const completedEncounterIds = [...new Set(Array.isArray(value.completedEncounterIds) ? value.completedEncounterIds.filter(id => storyEncounterIds.has(id)) : [])]
+      .sort((a, b) => storyEncounters.findIndex(encounter => encounter.id === a) - storyEncounters.findIndex(encounter => encounter.id === b));
+    const bestMoveCounts = {};
+    if (value.bestMoveCounts && typeof value.bestMoveCounts === 'object' && !Array.isArray(value.bestMoveCounts)) {
+      Object.entries(value.bestMoveCounts).forEach(([id, count]) => {
+        if (storyEncounterIds.has(id) && Number.isInteger(count) && count > 0) bestMoveCounts[id] = count;
+      });
     }
+    const firstIncomplete = storyEncounters.find(encounter => !completedEncounterIds.includes(encounter.id));
+    const requestedEncounter = storyEncounterIds.has(value.currentEncounterId) ? value.currentEncounterId : '';
+    const storyCompleted = completedEncounterIds.length === storyEncounters.length && value.storyCompleted === true;
+    return {
+      version: storyVersion,
+      currentEncounterId: storyCompleted ? storyEncounters[storyEncounters.length - 1].id : requestedEncounter || firstIncomplete?.id || storyEncounters[0].id,
+      completedEncounterIds,
+      bestMoveCounts,
+      retries: Number.isInteger(value.retries) && value.retries >= 0 ? value.retries : 0,
+      storyCompleted,
+      updatedAt: typeof value.updatedAt === 'string' && !Number.isNaN(Date.parse(value.updatedAt)) ? value.updatedAt : ''
+    };
+  }
+
+  function loadStoryProgress() {
+    try {
+      return sanitizeStoryProgress(JSON.parse(window.localStorage.getItem(storyStorageKey) || 'null'));
+    } catch (error) {
+      return defaultStoryProgress();
+    }
+  }
+
+  function saveStoryProgress() {
+    storyProgressState.updatedAt = new Date().toISOString();
+    try { window.localStorage.setItem(storyStorageKey, JSON.stringify(storyProgressState)); } catch (error) { /* optional */ }
+  }
+
+  function resetStoryProgress() {
+    storyProgressState = defaultStoryProgress();
+    try { window.localStorage.removeItem(storyStorageKey); } catch (error) { /* optional */ }
+  }
+
+  function currentStoryEncounter() {
+    return storyEncounters.find(encounter => encounter.id === storyProgressState.currentEncounterId) || storyEncounters[0];
+  }
+
+  function hasStoryProgress() {
+    return Boolean(storyProgressState.updatedAt || storyProgressState.completedEncounterIds.length || storyProgressState.storyCompleted);
   }
 
   function closeStoryMenu() {
@@ -1493,7 +1563,9 @@
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
     storyPrimary.textContent = hasStoryProgress() ? 'Continue the Route' : 'Begin the Route';
-    storyLocation.textContent = hasStoryProgress() ? 'The route is waiting' : 'Ash Gate · Gatehouse';
+    const encounter = currentStoryEncounter();
+    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
+    storyLocation.textContent = storyProgressState.storyCompleted ? 'The Dawn Vault is restored' : `${encounter.sector} · ${encounter.location} · ${encounterIndex + 1} of ${storyEncounters.length}`;
     storyShellStatus.textContent = message;
     document.body.dataset.experience = 'story';
     storyPrimary.focus();
@@ -1510,11 +1582,14 @@
   }
 
   function enterStoryRoute() {
+    saveStoryProgress();
+    const encounter = currentStoryEncounter();
+    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
     storyShell.dataset.view = 'route';
-    storyPrimary.textContent = 'Enter the Gatehouse';
-    storyLocation.textContent = 'Checkpoint 1 of 12 · Ash Gate';
-    storyIntro.textContent = 'The Warden compass points to the Gatehouse. One route remains, and the first cube seal is waiting.';
-    storyShellStatus.textContent = 'Route opened. Gatehouse is the first checkpoint.';
+    storyPrimary.textContent = storyProgressState.storyCompleted ? 'Replay the Epilogue' : `Enter ${encounter.location}`;
+    storyLocation.textContent = `Checkpoint ${encounterIndex + 1} of ${storyEncounters.length} · ${encounter.sector}`;
+    storyIntro.textContent = storyProgressState.storyCompleted ? 'The route is quiet. Dawn has returned to the Broken Archive.' : encounter.narrative;
+    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'The completed route is open.' : `Route opened. ${encounter.location} is the current checkpoint.`;
   }
 
   async function runSequence(moves, record) {
@@ -2044,7 +2119,7 @@
   fieldKitExit.addEventListener('click', () => showStoryTitle('Returned to the story. Cube state is unchanged.'));
   storyNewGame.addEventListener('click', () => {
     if (!window.confirm('Start a new route? This resets only Cube Warden story progress.')) return;
-    try { window.localStorage.removeItem(storyStorageKey); } catch (error) { /* optional */ }
+    resetStoryProgress();
     storyShell.dataset.view = 'title';
     storyIntro.textContent = 'Twelve seals stand between Aya and the Dawn Vault. Restore each cube before the Void Wraiths close in.';
     showStoryTitle('New route ready at the Ash Gate.');
@@ -2151,6 +2226,7 @@
   twoPlayerHistory = loadTwoPlayerHistory();
   renderTwoPlayerHistory();
   academyProgressState = loadAcademyProgress();
+  storyProgressState = loadStoryProgress();
   renderAcademyDeck();
   setAcademyScreen('journey');
   showStoryTitle();
@@ -2168,4 +2244,9 @@
   window.RubiksCubeFeedback = Object.freeze({ capabilities: feedbackCapabilities, preferences: () => ({ ...feedbackPreferences }), save: saveFeedbackPreferences });
   window.RubiksCubeTwoPlayer = Object.freeze({ state: () => ({ ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })), moves: twoPlayerState.moves.slice(), timesMs: twoPlayerState.timesMs.slice() }), start: startTwoPlayerRound, next: advanceTwoPlayerTurn, finish: finishTwoPlayerRound, reset: resetTwoPlayerState });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
+  window.CubeWardenStory = Object.freeze({
+    version: storyVersion,
+    encounters: () => storyEncounters.map(encounter => ({ ...encounter, setupMoves: encounter.setupMoves.slice(), hints: encounter.hints.slice() })),
+    state: () => ({ ...storyProgressState, completedEncounterIds: storyProgressState.completedEncounterIds.slice(), bestMoveCounts: { ...storyProgressState.bestMoveCounts } })
+  });
 })();
