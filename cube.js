@@ -2374,7 +2374,7 @@
     storyHintText.hidden = true;
     storyHintText.textContent = '';
     storyHint.disabled = false;
-    storyHint.textContent = 'Ask Compass for a Hint';
+    storyHint.textContent = 'Reveal a Hint';
     renderStoryPursuit();
   }
 
@@ -2404,7 +2404,7 @@
     storyHintIndex += 1;
     storyHint.textContent = storyHintIndex >= 3 ? 'All Hints Revealed' : 'Ask for the Next Hint';
     storyHint.disabled = storyHintIndex >= 3;
-    advanceStoryPressure('using a compass hint');
+    storyEncounterStatus.textContent = `Hint ${storyHintIndex} revealed. Wraiths remain paused while the seal is in focus.`;
   }
 
   async function startStoryEncounter() {
@@ -2434,7 +2434,7 @@
     storyMoveCount.textContent = 'Moves: 0';
     storyProgressLabel.textContent = storyProgressDescription();
     resetStoryEncounterHud();
-    storyEncounterStatus.textContent = `${encounter.location} ready. Make legal face turns to restore the seal.`;
+    storyEncounterStatus.textContent = `${encounter.location} ready. Wraiths are paused; take the time you need and make legal face turns.`;
     storyTurnControls.disabled = false;
     storyTurnControls.querySelector('button').focus();
   }
@@ -2452,18 +2452,7 @@
     const direction = currentProgress > storyLastProgress ? 'improving' : currentProgress < storyLastProgress ? 'slipped' : 'holding';
     const detail = storyEncounterContent[currentStoryEncounter().id];
     storyProgressLabel.textContent = detail?.progressGoal ? `${Math.min(currentProgress, detail.progressGoal)} of ${detail.progressGoal} ${detail.progressUnit} · ${direction}` : `Seal progress: ${direction}`;
-    if (currentProgress < storyLastProgress) {
-      storyStagnantMoves = 0;
-      advanceStoryPressure('losing seal progress');
-    } else if (currentProgress > storyLastProgress) {
-      storyStagnantMoves = 0;
-    } else {
-      storyStagnantMoves += 1;
-      if (storyStagnantMoves >= 4) {
-        storyStagnantMoves = 0;
-        advanceStoryPressure('four moves without progress');
-      }
-    }
+    storyStagnantMoves = currentProgress === storyLastProgress ? storyStagnantMoves + 1 : 0;
     storyLastProgress = currentProgress;
   }
 
