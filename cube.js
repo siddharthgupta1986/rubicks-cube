@@ -23,6 +23,7 @@
   const storyFieldKit = document.getElementById('story-field-kit');
   const storyShellStatus = document.getElementById('story-shell-status');
   const archiveExploration = document.getElementById('archive-exploration');
+  const archiveCanvas = document.getElementById('archive-canvas');
   const archiveSector = document.getElementById('archive-sector');
   const archiveLocation = document.getElementById('archive-location');
   const archiveObjective = document.getElementById('archive-objective');
@@ -297,6 +298,14 @@
   let stickers = [];
   let history = [];
   let busy = false;
+  let archiveGl = null;
+  let archiveProgram = null;
+  let archiveVertexBuffer = null;
+  let archiveVertexCount = 0;
+  let archiveAnimationFrame = 0;
+  let archiveLastFrameTime = 0;
+  let archiveElapsedTime = 0;
+  let archiveRendererAvailable = true;
   let dailyChallengeActive = false;
   let dailyChallengePreparing = false;
   let dailyChallengeStartedAt = 0;
@@ -1808,7 +1817,218 @@
     return false;
   }
 
+  function createArchiveShader(gl, type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      const message = gl.getShaderInfoLog(shader) || 'Unknown shader compilation error.';
+      gl.deleteShader(shader);
+      throw new Error(message);
+    }
+    return shader;
+  }
+
+  function createArchiveProgram(gl) {
+    const vertexShader = createArchiveShader(gl, gl.VERTEX_SHADER, `
+      attribute vec3 aPosition;
+      attribute vec3 aColor;
+      uniform mat4 uView;
+      uniform mat4 uProjection;
+      varying vec3 vColor;
+      varying float vDepth;
+      void main() {
+        vec4 viewPosition = uView * vec4(aPosition, 1.0);
+        vColor = aColor;
+        vDepth = -viewPosition.z;
+        gl_Position = uProjection * viewPosition;
+      }
+    `);
+    const fragmentShader = createArchiveShader(gl, gl.FRAGMENT_SHADER, `
+      precision mediump float;
+      varying vec3 vColor;
+      varying float vDepth;
+      uniform float uPulse;
+      void main() {
+        float fog = smoothstep(8.0, 34.0, vDepth);
+        float light = 0.82 + uPulse * 0.12;
+        vec3 litColor = vColor * light;
+        gl_FragColor = vec4(mix(litColor, vec3(0.012, 0.027, 0.032), fog), 1.0);
+      }
+    `);
+    const program = gl.createProgram();
+    gl.attachShader(program, vertexShader);
+    gl.attachShader(program, fragmentShader);
+    gl.linkProgram(program);
+    gl.deleteShader(vertexShader);
+    gl.deleteShader(fragmentShader);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      const message = gl.getProgramInfoLog(program) || 'Unknown shader link error.';
+      gl.deleteProgram(program);
+      throw new Error(message);
+    }
+    return program;
+  }
+
+  function addArchiveQuad(vertices, a, b, c, d, color) {
+    [a, b, c, a, c, d].forEach(point => vertices.push(...point, ...color));
+  }
+
+  function addArchiveBox(vertices, minimum, maximum, color) {
+    const [x0, y0, z0] = minimum;
+    const [x1, y1, z1] = maximum;
+    addArchiveQuad(vertices, [x0,y0,z1], [x1,y0,z1], [x1,y1,z1], [x0,y1,z1], color);
+    addArchiveQuad(vertices, [x1,y0,z0], [x0,y0,z0], [x0,y1,z0], [x1,y1,z0], color);
+    addArchiveQuad(vertices, [x0,y0,z0], [x0,y0,z1], [x0,y1,z1], [x0,y1,z0], color.map(value => value * .72));
+    addArchiveQuad(vertices, [x1,y0,z1], [x1,y0,z0], [x1,y1,z0], [x1,y1,z1], color.map(value => value * .82));
+    addArchiveQuad(vertices, [x0,y1,z1], [x1,y1,z1], [x1,y1,z0], [x0,y1,z0], color.map(value => value * 1.08));
+  }
+
+  function createArchiveBootstrapGeometry() {
+    const vertices = [];
+    addArchiveQuad(vertices, [-6,0,5], [6,0,5], [6,0,-28], [-6,0,-28], [.16,.19,.18]);
+    addArchiveQuad(vertices, [-6,5,-28], [6,5,-28], [6,5,5], [-6,5,5], [.08,.12,.13]);
+    addArchiveQuad(vertices, [-6,0,-28], [-6,0,5], [-6,5,5], [-6,5,-28], [.10,.16,.17]);
+    addArchiveQuad(vertices, [6,0,5], [6,0,-28], [6,5,-28], [6,5,5], [.12,.15,.15]);
+    addArchiveQuad(vertices, [6,0,-28], [-6,0,-28], [-6,5,-28], [6,5,-28], [.07,.11,.12]);
+    for (let z = 0; z >= -24; z -= 6) {
+      addArchiveBox(vertices, [-5.75,0,z - .55], [-5.05,4.65,z + .55], [.18,.25,.24]);
+      addArchiveBox(vertices, [5.05,0,z - .55], [5.75,4.65,z + .55], [.18,.23,.23]);
+      addArchiveBox(vertices, [-5.1,4.25,z - .45], [5.1,4.8,z + .45], [.15,.21,.21]);
+    }
+    addArchiveBox(vertices, [-1.65,0,-11.5], [1.65,.78,-8.2], [.28,.24,.15]);
+    addArchiveBox(vertices, [-.72,.78,-10.45], [.72,1.78,-9.25], [.62,.43,.16]);
+    addArchiveBox(vertices, [-2.15,0,-27.7], [2.15,4.1,-27.15], [.22,.17,.10]);
+    return new Float32Array(vertices);
+  }
+
+  function archivePerspective(fieldOfView, aspect, near, far) {
+    const f = 1 / Math.tan(fieldOfView / 2);
+    const rangeInverse = 1 / (near - far);
+    return new Float32Array([
+      f / aspect, 0, 0, 0,
+      0, f, 0, 0,
+      0, 0, (near + far) * rangeInverse, -1,
+      0, 0, near * far * rangeInverse * 2, 0
+    ]);
+  }
+
+  function archiveNormalize(vector) {
+    const length = Math.hypot(...vector) || 1;
+    return vector.map(value => value / length);
+  }
+
+  function archiveLookAt(eye, target, up) {
+    const z = archiveNormalize(eye.map((value, index) => value - target[index]));
+    const x = archiveNormalize([
+      up[1] * z[2] - up[2] * z[1],
+      up[2] * z[0] - up[0] * z[2],
+      up[0] * z[1] - up[1] * z[0]
+    ]);
+    const y = [
+      z[1] * x[2] - z[2] * x[1],
+      z[2] * x[0] - z[0] * x[2],
+      z[0] * x[1] - z[1] * x[0]
+    ];
+    return new Float32Array([
+      x[0], y[0], z[0], 0,
+      x[1], y[1], z[1], 0,
+      x[2], y[2], z[2], 0,
+      -x.reduce((sum, value, index) => sum + value * eye[index], 0),
+      -y.reduce((sum, value, index) => sum + value * eye[index], 0),
+      -z.reduce((sum, value, index) => sum + value * eye[index], 0),
+      1
+    ]);
+  }
+
+  function initializeArchiveRenderer() {
+    if (archiveGl && archiveProgram && archiveVertexBuffer) return true;
+    const gl = archiveCanvas.getContext('webgl', { alpha: false, antialias: true, powerPreference: 'high-performance' });
+    if (!gl) {
+      archiveRendererAvailable = false;
+      archiveCanvas.dataset.renderer = 'unavailable';
+      return false;
+    }
+    try {
+      archiveProgram = createArchiveProgram(gl);
+      archiveVertexBuffer = gl.createBuffer();
+      const geometry = createArchiveBootstrapGeometry();
+      archiveVertexCount = geometry.length / 6;
+      gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+      archiveGl = gl;
+      archiveRendererAvailable = true;
+      archiveCanvas.dataset.vertices = String(archiveVertexCount);
+      return true;
+    } catch (error) {
+      archiveRendererAvailable = false;
+      archiveCanvas.dataset.renderer = 'unavailable';
+      storyShellStatus.textContent = `The 3D Archive could not start: ${error.message}`;
+      return false;
+    }
+  }
+
+  function resizeArchiveCanvas() {
+    const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(archiveCanvas.clientWidth * pixelRatio));
+    const height = Math.max(1, Math.round(archiveCanvas.clientHeight * pixelRatio));
+    if (archiveCanvas.width !== width || archiveCanvas.height !== height) {
+      archiveCanvas.width = width;
+      archiveCanvas.height = height;
+    }
+    return { width, height };
+  }
+
+  function renderArchiveFrame(time) {
+    if (!archiveAnimationFrame || archiveExploration.hidden || !archiveGl || !archiveProgram) return;
+    const delta = archiveLastFrameTime ? Math.min((time - archiveLastFrameTime) / 1000, .05) : 0;
+    archiveLastFrameTime = time;
+    archiveElapsedTime += delta;
+    const gl = archiveGl;
+    const { width, height } = resizeArchiveCanvas();
+    gl.viewport(0, 0, width, height);
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.CULL_FACE);
+    gl.cullFace(gl.BACK);
+    gl.clearColor(.012, .027, .032, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    gl.useProgram(archiveProgram);
+    gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
+    const positionLocation = gl.getAttribLocation(archiveProgram, 'aPosition');
+    const colorLocation = gl.getAttribLocation(archiveProgram, 'aColor');
+    gl.enableVertexAttribArray(positionLocation);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 24, 0);
+    gl.enableVertexAttribArray(colorLocation);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 24, 12);
+    const view = archiveLookAt([0,1.65,4.3], [0,1.45,-11], [0,1,0]);
+    const projection = archivePerspective(Math.PI / 3.15, width / height, .1, 60);
+    gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uView'), false, view);
+    gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uProjection'), false, projection);
+    gl.uniform1f(gl.getUniformLocation(archiveProgram, 'uPulse'), (Math.sin(archiveElapsedTime * 2.2) + 1) / 2);
+    gl.drawArrays(gl.TRIANGLES, 0, archiveVertexCount);
+    archiveAnimationFrame = window.requestAnimationFrame(renderArchiveFrame);
+  }
+
+  function startArchiveRenderer() {
+    if (archiveAnimationFrame) return;
+    if (!initializeArchiveRenderer()) {
+      archiveThreat.querySelector('strong').textContent = '3D view unavailable';
+      return;
+    }
+    archiveLastFrameTime = 0;
+    archiveAnimationFrame = window.requestAnimationFrame(renderArchiveFrame);
+    archiveCanvas.dataset.renderer = 'active';
+  }
+
+  function stopArchiveRenderer() {
+    if (archiveAnimationFrame) window.cancelAnimationFrame(archiveAnimationFrame);
+    archiveAnimationFrame = 0;
+    archiveLastFrameTime = 0;
+    archiveCanvas.dataset.renderer = archiveRendererAvailable ? 'stopped' : 'unavailable';
+  }
+
   function showStoryTitle(message = '') {
+    stopArchiveRenderer();
     closeStoryMenu();
     storyShell.hidden = false;
     storyTitleCopy.hidden = false;
@@ -1850,12 +2070,14 @@
     document.body.dataset.experience = 'archive';
     saveStoryProgress();
     renderArchiveExploration();
+    startArchiveRenderer();
     const encounter = currentStoryEncounter();
     storyShellStatus.textContent = storyProgressState.storyCompleted ? 'All twelve seals are restored. The Dawn Vault is open.' : `Exploration ready in ${encounter.sector}. ${encounter.location} is the active seal.`;
     archiveApproachSeal.focus();
   }
 
   function showStoryBriefing() {
+    stopArchiveRenderer();
     const encounter = currentStoryEncounter();
     const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
     storyShell.hidden = true;
@@ -2057,6 +2279,7 @@
   }
 
   function showStoryEpilogue() {
+    stopArchiveRenderer();
     storyShell.hidden = true;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
@@ -2097,6 +2320,7 @@
 
   async function openFieldKit() {
     if (!await restoreSolvedCubeForModeChange()) return;
+    stopArchiveRenderer();
     clearChallengeState();
     closeStoryMenu();
     storyShell.hidden = true;
@@ -2810,5 +3034,14 @@
     version: storyVersion,
     encounters: () => storyEncounters.map(encounter => ({ ...encounter, setupMoves: encounter.setupMoves.slice(), hints: encounter.hints.slice() })),
     state: () => ({ ...storyProgressState, completedEncounterIds: storyProgressState.completedEncounterIds.slice(), bestMoveCounts: { ...storyProgressState.bestMoveCounts } })
+  });
+  window.CubeWardenArchive = Object.freeze({
+    renderer: () => ({
+      available: archiveRendererAvailable,
+      active: Boolean(archiveAnimationFrame),
+      width: archiveCanvas.width,
+      height: archiveCanvas.height,
+      vertices: archiveVertexCount
+    })
   });
 })();
