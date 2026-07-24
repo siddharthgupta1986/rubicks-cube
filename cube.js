@@ -322,7 +322,13 @@
     w: 'forward',
     s: 'backward',
     a: 'left',
-    d: 'right'
+    d: 'right',
+    arrowup: 'forward',
+    arrowdown: 'backward'
+  });
+  const archiveTurnKeyMap = Object.freeze({
+    arrowleft: 'turnLeft',
+    arrowright: 'turnRight'
   });
   const archiveMaterials = Object.freeze({
     stone: Object.freeze({ tint: Object.freeze([.64,.72,.70]), atlas: Object.freeze([0,0,.5,.5]) }),
@@ -2104,6 +2110,11 @@
   }
 
   function moveArchivePlayer(delta) {
+    const turnInput = Number(archiveMovementKeys.has('turnRight')) - Number(archiveMovementKeys.has('turnLeft'));
+    if (turnInput) {
+      archivePlayer.yaw += turnInput * 1.95 * delta;
+      archivePlayer.yaw = Math.atan2(Math.sin(archivePlayer.yaw), Math.cos(archivePlayer.yaw));
+    }
     let forwardInput = 0;
     let rightInput = 0;
     if (archiveMovementKeys.has('forward')) forwardInput += 1;
@@ -2112,7 +2123,7 @@
     if (archiveMovementKeys.has('left')) rightInput -= 1;
     const inputLength = Math.hypot(forwardInput, rightInput);
     if (!inputLength) {
-      archivePlayerMoving = false;
+      archivePlayerMoving = Boolean(turnInput);
       return;
     }
     forwardInput /= inputLength;
@@ -2209,6 +2220,7 @@
     archivePlayerMoving = false;
     updateArchivePlayerDiagnostics();
     archiveCanvas.dataset.renderer = archiveRendererAvailable ? 'stopped' : 'unavailable';
+    if (document.pointerLockElement === archiveCanvas && document.exitPointerLock) document.exitPointerLock();
   }
 
   function showStoryTitle(message = '') {
@@ -2679,13 +2691,19 @@
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return;
     if (document.body.dataset.experience === 'archive' && storyMenu.hidden) {
       const movement = archiveMovementKeyMap[event.key.toLowerCase()];
-      if (movement || event.key === 'Shift') {
+      const turning = archiveTurnKeyMap[event.key.toLowerCase()];
+      if (movement || turning || event.key === 'Shift') {
         event.preventDefault();
-        archiveMovementKeys.add(movement || 'sprint');
+        archiveMovementKeys.add(movement || turning || 'sprint');
         if (!event.repeat) {
           moveArchivePlayer(1 / 60);
           updateArchivePlayerDiagnostics();
         }
+        return;
+      }
+      if (event.key.toLowerCase() === 'e' && !event.repeat) {
+        event.preventDefault();
+        archiveApproachSeal.click();
         return;
       }
     }
@@ -2717,12 +2735,45 @@
   });
   document.addEventListener('keyup', event => {
     const movement = archiveMovementKeyMap[event.key.toLowerCase()];
+    const turning = archiveTurnKeyMap[event.key.toLowerCase()];
     if (movement) archiveMovementKeys.delete(movement);
+    if (turning) archiveMovementKeys.delete(turning);
     if (event.key === 'Shift') archiveMovementKeys.delete('sprint');
   });
   window.addEventListener('blur', () => {
     archiveMovementKeys.clear();
     archivePlayerMoving = false;
+  });
+  archiveCanvas.addEventListener('click', () => {
+    if (document.body.dataset.experience !== 'archive' || !storyMenu.hidden) return;
+    archiveCanvas.focus();
+    if (!archiveCanvas.requestPointerLock) return;
+    try {
+      const request = archiveCanvas.requestPointerLock();
+      if (request && typeof request.catch === 'function') {
+        request.catch(() => {
+          archiveCanvas.dataset.pointerLock = 'unavailable';
+          storyShellStatus.textContent = 'Mouse look was not enabled. Keyboard turning remains available.';
+        });
+      }
+    } catch (error) {
+      archiveCanvas.dataset.pointerLock = 'unavailable';
+      storyShellStatus.textContent = 'Mouse look was not enabled. Keyboard turning remains available.';
+    }
+  });
+  document.addEventListener('mousemove', event => {
+    if (document.pointerLockElement !== archiveCanvas || document.body.dataset.experience !== 'archive') return;
+    archivePlayer.yaw += event.movementX * .0022;
+    archivePlayer.yaw = Math.atan2(Math.sin(archivePlayer.yaw), Math.cos(archivePlayer.yaw));
+    updateArchivePlayerDiagnostics();
+  });
+  document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement === archiveCanvas) {
+      archiveCanvas.dataset.pointerLock = 'active';
+      storyShellStatus.textContent = 'Mouse look active. Press Escape to release the pointer.';
+    } else {
+      archiveCanvas.dataset.pointerLock = 'inactive';
+    }
   });
   if (navigator.getGamepads) gamepadTimerId = window.setInterval(pollGamepads, 100);
   window.addEventListener('gamepadconnected', () => { status.textContent = 'Gamepad connected. Face-turn buttons are ready.'; });
