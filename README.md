@@ -35,6 +35,8 @@ Then visit `http://127.0.0.1:4173`.
 | `index.html` | Accessible page structure and controls. |
 | `styles.css` | Responsive layout, 3D cube presentation, and theme. |
 | `cube.js` | Cube state, Story campaign, encounters, turns, persistence, and Field Kit behavior. |
+| `archive-state.js` | Dependency-free campaign save validation, checkpoint, and spawn model shared by the game and fixtures. |
+| `tests/archive-state-fixtures.js` | Node fixture coverage for all campaign progress states and storage isolation. |
 | `assets/cube-warden/` | Original local story artwork and generation metadata. |
 | `prds/cube-warden-the-last-route-prd.md` | Authoritative product and game design contract. |
 | `prds/cube-warden-the-last-route-qa.md` | Campaign, regression, accessibility, and release test matrix. |
@@ -44,7 +46,9 @@ Then visit `http://127.0.0.1:4173`.
 ## Quick checks
 
 ```bash
+node --check archive-state.js
 node --check cube.js
+node tests/archive-state-fixtures.js
 python3 - <<'PY'
 from html.parser import HTMLParser
 HTMLParser().feed(open('index.html', encoding='utf-8').read())

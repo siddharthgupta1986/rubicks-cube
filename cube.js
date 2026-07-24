@@ -231,6 +231,25 @@
     Object.freeze({ id: 'dawn-vault', sector: 'Warden Keep', location: 'Dawn Vault', narrative: 'The final seal contains every lesson. Restore all six faces and bring back the dawn.', objective: 'Return the entire cube to its solved state.', setupMoves: Object.freeze(['R', 'U', "R'", "U'", 'F2', 'D', 'L', "D'", "L'"]), validatorId: 'solved', progressId: 'solvedStickers', targetMoves: 60, pressureBudget: 5, hints: Object.freeze(['Solve in layers: white, middle, then yellow.', 'Use the Field Kit lessons if you need to review an algorithm.', 'Follow the objective steps already learned; any valid full solve counts.']) })
   ]);
   const storyEncounterIds = new Set(storyEncounters.map(encounter => encounter.id));
+  const archiveStateModel = window.CubeWardenArchiveState.createModel(
+    storyEncounters.map(encounter => encounter.id),
+    { version: storyVersion, entranceId: 'archive-entrance' }
+  );
+  const archiveCheckpointSpawns = Object.freeze({
+    'archive-entrance': Object.freeze({ x: 0, z: 3.35, yaw: 0 }),
+    'gatehouse': Object.freeze({ x: 0, z: -7.55, yaw: 0 }),
+    'compass-hall': Object.freeze({ x: 0, z: -30, yaw: 0 }),
+    'chapel-steps': Object.freeze({ x: 18, z: -42, yaw: Math.PI / 2 }),
+    'mirror-bridge': Object.freeze({ x: 35, z: -54, yaw: 0 }),
+    'lantern-rooms': Object.freeze({ x: 48, z: -70, yaw: Math.PI / 2 }),
+    'flooded-archive': Object.freeze({ x: 62, z: -84, yaw: 0 }),
+    'gearworks': Object.freeze({ x: 78, z: -96, yaw: Math.PI / 2 }),
+    'furnace-passage': Object.freeze({ x: 92, z: -112, yaw: 0 }),
+    'observatory': Object.freeze({ x: 108, z: -126, yaw: Math.PI / 2 }),
+    'clock-tower': Object.freeze({ x: 122, z: -142, yaw: 0 }),
+    'wardens-door': Object.freeze({ x: 138, z: -156, yaw: Math.PI / 2 }),
+    'dawn-vault': Object.freeze({ x: 152, z: -172, yaw: 0 })
+  });
   const storyEncounterContent = {
     gatehouse: Object.freeze({
       orientation: 'Hold white on top and green facing you. R turns the right face; U turns the top face.',
@@ -1784,82 +1803,57 @@
   }
 
   function defaultStoryProgress() {
+    const { completedSealIds, ...state } = archiveStateModel.defaultState();
     return {
-      version: storyVersion,
+      ...state,
       currentEncounterId: storyEncounters[0].id,
-      checkpointSealId: 'archive-entrance',
       completedEncounterIds: [],
-      bestMoveCounts: {},
-      discoveries: [],
-      accessibility: { pursuit: 'standard' },
-      retries: 0,
-      storyCompleted: false,
-      updatedAt: ''
+      retries: 0
     };
   }
 
   function sanitizeStoryProgress(value) {
-    if (!value || value.version !== storyVersion) return defaultStoryProgress();
-    const requestedCompleted = new Set(Array.isArray(value.completedSealIds) ? value.completedSealIds.filter(id => storyEncounterIds.has(id)) : []);
-    const completedEncounterIds = [];
-    for (const encounter of storyEncounters) {
-      if (!requestedCompleted.has(encounter.id)) break;
-      completedEncounterIds.push(encounter.id);
-    }
-    const bestMoveCounts = {};
-    if (value.bestMoveCounts && typeof value.bestMoveCounts === 'object' && !Array.isArray(value.bestMoveCounts)) {
-      Object.entries(value.bestMoveCounts).forEach(([id, count]) => {
-        if (completedEncounterIds.includes(id) && Number.isInteger(count) && count > 0) bestMoveCounts[id] = count;
-      });
-    }
+    const { completedSealIds: completedEncounterIds, ...state } = archiveStateModel.sanitize(value);
     const firstIncomplete = storyEncounters.find(encounter => !completedEncounterIds.includes(encounter.id));
-    const storyCompleted = completedEncounterIds.length === storyEncounters.length && value.storyCompleted === true;
-    const checkpointSealId = completedEncounterIds.at(-1) || 'archive-entrance';
-    const discoveries = [...new Set(Array.isArray(value.discoveries)
-      ? value.discoveries.filter(id => typeof id === 'string' && /^[a-z0-9-]{1,64}$/.test(id))
-      : [])].slice(0, 64);
-    const pursuit = ['standard', 'slow', 'off'].includes(value.accessibility?.pursuit) ? value.accessibility.pursuit : 'standard';
     return {
-      version: storyVersion,
-      currentEncounterId: storyCompleted ? storyEncounters[storyEncounters.length - 1].id : firstIncomplete?.id || storyEncounters[0].id,
-      checkpointSealId,
+      ...state,
+      currentEncounterId: state.storyCompleted ? storyEncounters[storyEncounters.length - 1].id : firstIncomplete?.id || storyEncounters[0].id,
       completedEncounterIds,
-      bestMoveCounts,
-      discoveries,
-      accessibility: { pursuit },
-      retries: 0,
-      storyCompleted,
-      updatedAt: typeof value.updatedAt === 'string' && !Number.isNaN(Date.parse(value.updatedAt)) ? value.updatedAt : ''
+      retries: 0
     };
   }
 
   function loadStoryProgress() {
-    try {
-      return sanitizeStoryProgress(JSON.parse(window.localStorage.getItem(storyStorageKey) || 'null'));
-    } catch (error) {
-      return defaultStoryProgress();
-    }
+    return sanitizeStoryProgress(archiveStateModel.load(window.localStorage, storyStorageKey));
   }
 
   function saveStoryProgress() {
     storyProgressState.updatedAt = new Date().toISOString();
     storyProgressState.checkpointSealId = storyProgressState.completedEncounterIds.at(-1) || 'archive-entrance';
-    const record = {
-      version: storyVersion,
-      checkpointSealId: storyProgressState.checkpointSealId,
-      completedSealIds: storyProgressState.completedEncounterIds.slice(),
-      bestMoveCounts: { ...storyProgressState.bestMoveCounts },
-      discoveries: storyProgressState.discoveries.slice(),
-      accessibility: { ...storyProgressState.accessibility },
-      storyCompleted: storyProgressState.storyCompleted,
-      updatedAt: storyProgressState.updatedAt
-    };
-    try { window.localStorage.setItem(storyStorageKey, JSON.stringify(record)); } catch (error) { /* optional */ }
+    try {
+      archiveStateModel.save(window.localStorage, storyStorageKey, {
+        ...storyProgressState,
+        checkpointSealId: storyProgressState.checkpointSealId,
+        completedSealIds: storyProgressState.completedEncounterIds.slice()
+      });
+    } catch (error) { /* optional */ }
   }
 
   function resetStoryProgress() {
     storyProgressState = defaultStoryProgress();
-    try { window.localStorage.removeItem(storyStorageKey); } catch (error) { /* optional */ }
+    try { archiveStateModel.reset(window.localStorage, storyStorageKey); } catch (error) { /* optional */ }
+    restoreArchiveCheckpointPosition();
+  }
+
+  function restoreArchiveCheckpointPosition() {
+    const spawn = archiveStateModel.resolveSpawn({
+      ...storyProgressState,
+      completedSealIds: storyProgressState.completedEncounterIds
+    }, archiveCheckpointSpawns);
+    archivePlayer.x = spawn.x;
+    archivePlayer.z = spawn.z;
+    archivePlayer.yaw = spawn.yaw;
+    updateArchivePlayerDiagnostics();
   }
 
   function currentStoryEncounter() {
@@ -3399,6 +3393,7 @@
   renderTwoPlayerHistory();
   academyProgressState = loadAcademyProgress();
   storyProgressState = loadStoryProgress();
+  restoreArchiveCheckpointPosition();
   renderAcademyDeck();
   setAcademyScreen('journey');
   showStoryTitle();
