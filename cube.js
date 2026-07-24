@@ -307,6 +307,23 @@
   let archiveLastFrameTime = 0;
   let archiveElapsedTime = 0;
   let archiveRendererAvailable = true;
+  let archivePlayerMoving = false;
+  const archiveMovementKeys = new Set();
+  const archivePlayer = {
+    x: 0,
+    y: 1.65,
+    z: 3.35,
+    yaw: 0,
+    radius: .34,
+    walkSpeed: 3.15,
+    sprintSpeed: 5.4
+  };
+  const archiveMovementKeyMap = Object.freeze({
+    w: 'forward',
+    s: 'backward',
+    a: 'left',
+    d: 'right'
+  });
   const archiveMaterials = Object.freeze({
     stone: Object.freeze({ tint: Object.freeze([.64,.72,.70]), atlas: Object.freeze([0,0,.5,.5]) }),
     iron: Object.freeze({ tint: Object.freeze([.58,.49,.38]), atlas: Object.freeze([.5,0,1,.5]) }),
@@ -2076,11 +2093,65 @@
     return { width, height };
   }
 
+  function archivePositionBlocked(x, z) {
+    return archiveWorld.solids.some(solid => {
+      if (!solid.collision || solid.maximum[1] <= 0 || solid.minimum[1] >= archivePlayer.y + .15) return false;
+      return x + archivePlayer.radius > solid.minimum[0]
+        && x - archivePlayer.radius < solid.maximum[0]
+        && z + archivePlayer.radius > solid.minimum[2]
+        && z - archivePlayer.radius < solid.maximum[2];
+    });
+  }
+
+  function moveArchivePlayer(delta) {
+    let forwardInput = 0;
+    let rightInput = 0;
+    if (archiveMovementKeys.has('forward')) forwardInput += 1;
+    if (archiveMovementKeys.has('backward')) forwardInput -= 1;
+    if (archiveMovementKeys.has('right')) rightInput += 1;
+    if (archiveMovementKeys.has('left')) rightInput -= 1;
+    const inputLength = Math.hypot(forwardInput, rightInput);
+    if (!inputLength) {
+      archivePlayerMoving = false;
+      return;
+    }
+    forwardInput /= inputLength;
+    rightInput /= inputLength;
+    const speed = archiveMovementKeys.has('sprint') ? archivePlayer.sprintSpeed : archivePlayer.walkSpeed;
+    const forwardX = Math.sin(archivePlayer.yaw);
+    const forwardZ = -Math.cos(archivePlayer.yaw);
+    const rightX = Math.cos(archivePlayer.yaw);
+    const rightZ = Math.sin(archivePlayer.yaw);
+    const movementX = (forwardX * forwardInput + rightX * rightInput) * speed * delta;
+    const movementZ = (forwardZ * forwardInput + rightZ * rightInput) * speed * delta;
+    const nextX = archivePlayer.x + movementX;
+    const nextZ = archivePlayer.z + movementZ;
+    let moved = false;
+    if (!archivePositionBlocked(nextX, archivePlayer.z)) {
+      archivePlayer.x = nextX;
+      moved = moved || Math.abs(movementX) > .0001;
+    }
+    if (!archivePositionBlocked(archivePlayer.x, nextZ)) {
+      archivePlayer.z = nextZ;
+      moved = moved || Math.abs(movementZ) > .0001;
+    }
+    archivePlayerMoving = moved;
+  }
+
+  function updateArchivePlayerDiagnostics() {
+    archiveCanvas.dataset.playerX = archivePlayer.x.toFixed(3);
+    archiveCanvas.dataset.playerZ = archivePlayer.z.toFixed(3);
+    archiveCanvas.dataset.playerYaw = archivePlayer.yaw.toFixed(3);
+    archiveCanvas.dataset.playerMoving = String(archivePlayerMoving);
+  }
+
   function renderArchiveFrame(time) {
     if (!archiveAnimationFrame || archiveExploration.hidden || !archiveGl || !archiveProgram) return;
     const delta = archiveLastFrameTime ? Math.min((time - archiveLastFrameTime) / 1000, .05) : 0;
     archiveLastFrameTime = time;
     archiveElapsedTime += delta;
+    moveArchivePlayer(delta);
+    updateArchivePlayerDiagnostics();
     const gl = archiveGl;
     const { width, height } = resizeArchiveCanvas();
     gl.viewport(0, 0, width, height);
@@ -2102,7 +2173,14 @@
     gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 32, 24);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, archiveTexture);
-    const view = archiveLookAt([0,1.65,4.3], [0,1.45,-11], [0,1,0]);
+    const bob = archivePlayerMoving && !reducedMotion ? Math.sin(archiveElapsedTime * 10.5) * .025 : 0;
+    const eye = [archivePlayer.x, archivePlayer.y + bob, archivePlayer.z];
+    const target = [
+      archivePlayer.x + Math.sin(archivePlayer.yaw),
+      archivePlayer.y - .06 + bob,
+      archivePlayer.z - Math.cos(archivePlayer.yaw)
+    ];
+    const view = archiveLookAt(eye, target, [0,1,0]);
     const projection = archivePerspective(Math.PI / 3.15, width / height, .1, 60);
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uView'), false, view);
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uProjection'), false, projection);
@@ -2127,6 +2205,9 @@
     if (archiveAnimationFrame) window.cancelAnimationFrame(archiveAnimationFrame);
     archiveAnimationFrame = 0;
     archiveLastFrameTime = 0;
+    archiveMovementKeys.clear();
+    archivePlayerMoving = false;
+    updateArchivePlayerDiagnostics();
     archiveCanvas.dataset.renderer = archiveRendererAvailable ? 'stopped' : 'unavailable';
   }
 
@@ -2596,6 +2677,18 @@
     if (handleStoryMenuKeydown(event)) return;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return;
+    if (document.body.dataset.experience === 'archive' && storyMenu.hidden) {
+      const movement = archiveMovementKeyMap[event.key.toLowerCase()];
+      if (movement || event.key === 'Shift') {
+        event.preventDefault();
+        archiveMovementKeys.add(movement || 'sprint');
+        if (!event.repeat) {
+          moveArchivePlayer(1 / 60);
+          updateArchivePlayerDiagnostics();
+        }
+        return;
+      }
+    }
     const cameraStep = event.shiftKey ? 20 : 10;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight' || event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
@@ -2621,6 +2714,15 @@
     status.textContent = `${move} turn applied from the keyboard.`;
     announceGuidedProgress();
     if (speedrunState === 'running' && isSolvedState()) finishSpeedrun();
+  });
+  document.addEventListener('keyup', event => {
+    const movement = archiveMovementKeyMap[event.key.toLowerCase()];
+    if (movement) archiveMovementKeys.delete(movement);
+    if (event.key === 'Shift') archiveMovementKeys.delete('sprint');
+  });
+  window.addEventListener('blur', () => {
+    archiveMovementKeys.clear();
+    archivePlayerMoving = false;
   });
   if (navigator.getGamepads) gamepadTimerId = window.setInterval(pollGamepads, 100);
   window.addEventListener('gamepadconnected', () => { status.textContent = 'Gamepad connected. Face-turn buttons are ready.'; });
