@@ -332,6 +332,9 @@
   let archivePlayerMoving = false;
   let archiveSealInRange = false;
   let archiveReturnAnchor = null;
+  let archiveRuntimePhase = 'boot';
+  let archivePauseReturnPhase = 'title';
+  const archiveRuntimePhases = new Set(['boot', 'title', 'exploration', 'seal-focus', 'pause', 'capture', 'epilogue', 'field-kit']);
   const archiveMovementKeys = new Set();
   const archivePlayer = {
     x: 0,
@@ -1875,7 +1878,7 @@
     if (storyMenu.hidden) return false;
     if (event.key === 'Escape') {
       event.preventDefault();
-      closeStoryMenu(true);
+      resumeArchiveAfterPause();
       return true;
     }
     if (event.key !== 'Tab') return false;
@@ -2354,9 +2357,35 @@
     if (document.pointerLockElement === archiveCanvas && document.exitPointerLock) document.exitPointerLock();
   }
 
+  function setArchiveRuntimePhase(nextPhase, { preserveSession = false, closeMenu = true } = {}) {
+    if (!archiveRuntimePhases.has(nextPhase)) throw new Error(`Unknown Archive runtime phase: ${nextPhase}`);
+    if (nextPhase !== 'exploration') stopArchiveRenderer();
+    if (closeMenu) closeStoryMenu();
+    if (!preserveSession) {
+      clearChallengeState(nextPhase === 'seal-focus' || nextPhase === 'capture' ? 'story' : '');
+      if (nextPhase !== 'field-kit') closeFieldKitPanels();
+      if (nextPhase !== 'seal-focus' && nextPhase !== 'capture') {
+        storyEncounterActive = false;
+        storyPreparing = false;
+        storyTurnControls.disabled = true;
+      }
+    }
+    archiveRuntimePhase = nextPhase;
+    document.body.dataset.archivePhase = nextPhase;
+    archiveCanvas.dataset.phase = nextPhase;
+  }
+
+  function resumeArchiveAfterPause() {
+    const resumePhase = archivePauseReturnPhase;
+    closeStoryMenu(true);
+    setArchiveRuntimePhase(resumePhase, { preserveSession: true, closeMenu: false });
+    if (resumePhase === 'exploration') {
+      startArchiveRenderer();
+    }
+  }
+
   function showStoryTitle(message = '') {
-    stopArchiveRenderer();
-    closeStoryMenu();
+    setArchiveRuntimePhase('title');
     storyShell.hidden = false;
     storyTitleCopy.hidden = false;
     archiveExploration.hidden = true;
@@ -2389,7 +2418,7 @@
   }
 
   function showArchiveExploration() {
-    closeStoryMenu();
+    setArchiveRuntimePhase('exploration');
     storyShell.hidden = false;
     storyTitleCopy.hidden = true;
     archiveExploration.hidden = false;
@@ -2410,7 +2439,7 @@
   }
 
   function showStoryBriefing() {
-    stopArchiveRenderer();
+    setArchiveRuntimePhase('seal-focus');
     const encounter = currentStoryEncounter();
     const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
     storyShell.hidden = true;
@@ -2459,6 +2488,7 @@
 
   function failStoryEncounter(reason) {
     if (!storyEncounterActive) return;
+    setArchiveRuntimePhase('capture', { preserveSession: true });
     storyEncounterActive = false;
     storyGameplay.hidden = true;
     storyFailure.hidden = false;
@@ -2491,6 +2521,7 @@
     const encounter = currentStoryEncounter();
     const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
     clearChallengeState('story');
+    setArchiveRuntimePhase('seal-focus', { preserveSession: true });
     storyEncounterActive = false;
     storyPreparing = true;
     history = [];
@@ -2561,6 +2592,7 @@
 
   async function retryStoryEncounter() {
     if (busy || !storyCheckpointIndex && history.length === 0) return;
+    setArchiveRuntimePhase('seal-focus', { preserveSession: true });
     storyEncounterActive = false;
     const playerMoves = history.slice(storyCheckpointIndex);
     storyEncounterStatus.textContent = 'Returning to the seal checkpoint…';
@@ -2602,7 +2634,7 @@
   }
 
   function showStoryEpilogue() {
-    stopArchiveRenderer();
+    setArchiveRuntimePhase('epilogue');
     storyShell.hidden = true;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
@@ -2643,9 +2675,7 @@
 
   async function openFieldKit() {
     if (!await restoreSolvedCubeForModeChange()) return;
-    stopArchiveRenderer();
-    clearChallengeState();
-    closeStoryMenu();
+    setArchiveRuntimePhase('field-kit');
     storyShell.hidden = true;
     fieldKitContent.hidden = false;
     fieldKitCube.hidden = false;
@@ -3245,15 +3275,17 @@
   storyMenuToggle.addEventListener('click', () => {
     const opening = storyMenu.hidden;
     if (!opening) {
-      closeStoryMenu(true);
+      resumeArchiveAfterPause();
       return;
     }
+    archivePauseReturnPhase = archiveRuntimePhase === 'exploration' ? 'exploration' : 'title';
+    setArchiveRuntimePhase('pause', { preserveSession: true, closeMenu: false });
     storyMenuReturnFocus = document.activeElement;
     storyMenu.hidden = false;
     storyMenuToggle.setAttribute('aria-expanded', 'true');
     storyMenuClose.focus();
   });
-  storyMenuClose.addEventListener('click', () => closeStoryMenu(true));
+  storyMenuClose.addEventListener('click', resumeArchiveAfterPause);
   storyFieldKit.addEventListener('click', openFieldKit);
   fieldKitExit.addEventListener('click', exitFieldKitToStory);
   storyNewGame.addEventListener('click', () => {
@@ -3408,6 +3440,7 @@
   window.RubiksCubeProgress = Object.freeze({ events: () => progressEvents.slice(), record: recordProgressEvent });
   window.RubiksCubeInput = Object.freeze({ shortcuts: { ...keyboardShortcuts }, gamepad: { ...gamepadShortcuts } });
   window.RubiksCubeAchievements = Object.freeze({ list: () => achievementCatalog.map(achievement => ({ ...achievement, rule: { ...achievement.rule } })) });
+  window.CubeWardenRuntime = Object.freeze({ phase: () => archiveRuntimePhase });
   window.RubiksCubeFeedback = Object.freeze({ capabilities: feedbackCapabilities, preferences: () => ({ ...feedbackPreferences }), save: saveFeedbackPreferences });
   window.RubiksCubeTwoPlayer = Object.freeze({ state: () => ({ ...twoPlayerState, players: twoPlayerState.players.map(player => ({ ...player })), moves: twoPlayerState.moves.slice(), timesMs: twoPlayerState.timesMs.slice() }), start: startTwoPlayerRound, next: advanceTwoPlayerTurn, finish: finishTwoPlayerRound, reset: resetTwoPlayerState });
   window.RubiksCubeReplay = Object.freeze({ create: createReplay, isValid: isReplay, encode: encodeReplay, decode: decodeReplay, play: playReplay, step: stepReplay, version: replayVersion });
