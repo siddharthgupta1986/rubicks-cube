@@ -324,8 +324,11 @@
   let archiveGl = null;
   let archiveProgram = null;
   let archiveVertexBuffer = null;
+  let archiveWraithBuffer = null;
   let archiveTexture = null;
   let archiveVertexCount = 0;
+  let archiveWraithVertexCount = 0;
+  let archiveWraithSnapshot = [];
   let archiveGeometrySignature = '';
   let archivePendingWorldChange = null;
   let archiveAnimationFrame = 0;
@@ -368,7 +371,10 @@
     iron: Object.freeze({ tint: Object.freeze([.96,.86,.68]), atlas: Object.freeze([0,.5,1/3,1]) }),
     star: Object.freeze({ tint: Object.freeze([.78,.84,1]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
     dawn: Object.freeze({ tint: Object.freeze([1,.96,.82]), atlas: Object.freeze([2/3,.5,1,1]) }),
-    seal: Object.freeze({ tint: Object.freeze([1.25,.86,.32]), atlas: Object.freeze([2/3,.5,1,1]) })
+    seal: Object.freeze({ tint: Object.freeze([1.25,.86,.32]), atlas: Object.freeze([2/3,.5,1,1]) }),
+    wraith: Object.freeze({ tint: Object.freeze([.32,.48,.62]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
+    wraithWarn: Object.freeze({ tint: Object.freeze([.78,.68,.35]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
+    wraithPursuit: Object.freeze({ tint: Object.freeze([.95,.32,.28]), atlas: Object.freeze([0,.5,1/3,1]) })
   });
   const archiveWorld = Object.freeze({
     bounds: Object.freeze({ minimum: Object.freeze([-6,0,-182]), maximum: Object.freeze([104,5,5]) }),
@@ -2162,6 +2168,35 @@
     return new Float32Array(vertices);
   }
 
+  function createArchiveWraithGeometry(actors, time) {
+    const vertices = [];
+    actors.forEach((actor, index) => {
+      const animated = reducedMotion ? 0 : Math.sin(time * .003 + index * 1.7);
+      const bob = animated * .16;
+      const pursuitOffset = actor.state === 'pursuit' ? .38 : 0;
+      const x = actor.x + actor.headingX * pursuitOffset;
+      const z = actor.z + actor.headingZ * pursuitOffset;
+      const material = actor.state === 'pursuit'
+        ? 'wraithPursuit'
+        : actor.state === 'detection'
+          ? 'wraithWarn'
+          : 'wraith';
+      const width = actor.state === 'pursuit' ? .52 : actor.state === 'detection' ? .42 : .32;
+      addArchiveBox(vertices, [x-width, .42+bob, z-width], [x+width, 1.72+bob, z+width], material);
+      addArchiveBox(vertices, [x-.2, 1.7+bob, z-.2], [x+.2, 2.2+bob, z+.2], material);
+      const wingHeight = actor.state === 'detection' ? 2.38 : actor.state === 'pursuit' ? 1.35 : 1.8;
+      const wingReach = actor.state === 'pursuit' ? 1.05 : .72;
+      addArchiveBox(vertices, [x-wingReach, 1.08+bob, z-.13], [x-width, wingHeight+bob, z+.13], material);
+      addArchiveBox(vertices, [x+width, 1.08+bob, z-.13], [x+wingReach, wingHeight+bob, z+.13], material);
+      if (actor.state === 'search') {
+        const orbitX = x + Math.cos(time * .002 + index) * .8;
+        const orbitZ = z + Math.sin(time * .002 + index) * .8;
+        addArchiveBox(vertices, [orbitX-.12, 1.25, orbitZ-.12], [orbitX+.12, 1.65, orbitZ+.12], 'wraithWarn');
+      }
+    });
+    return new Float32Array(vertices);
+  }
+
   function createArchiveTexture(gl) {
     const source = document.createElement('canvas');
     source.width = 768;
@@ -2265,7 +2300,7 @@
   }
 
   function initializeArchiveRenderer() {
-    if (archiveGl && archiveProgram && archiveVertexBuffer && archiveTexture) return true;
+    if (archiveGl && archiveProgram && archiveVertexBuffer && archiveWraithBuffer && archiveTexture) return true;
     const gl = archiveCanvas.getContext('webgl', { alpha: false, antialias: true, powerPreference: 'high-performance' });
     if (!gl) {
       archiveRendererAvailable = false;
@@ -2275,6 +2310,7 @@
     try {
       archiveProgram = createArchiveProgram(gl);
       archiveVertexBuffer = gl.createBuffer();
+      archiveWraithBuffer = gl.createBuffer();
       const geometry = createArchiveBootstrapGeometry();
       archiveVertexCount = geometry.length / 8;
       gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
@@ -2402,6 +2438,7 @@
       player: { x: archivePlayer.x, z: archivePlayer.z },
       pursuitScale: pursuitMode === 'slow' ? .55 : 1
     });
+    archiveWraithSnapshot = actors;
     const nearest = actors.reduce((result, actor) => {
       const distance = Math.hypot(actor.x - archivePlayer.x, actor.z - archivePlayer.z);
       return !result || distance < result.distance ? { ...actor, distance } : result;
@@ -2612,16 +2649,18 @@
     gl.clearColor(.012, .027, .032, 1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     gl.useProgram(archiveProgram);
-    gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
     const positionLocation = gl.getAttribLocation(archiveProgram, 'aPosition');
     const colorLocation = gl.getAttribLocation(archiveProgram, 'aColor');
     const uvLocation = gl.getAttribLocation(archiveProgram, 'aUv');
-    gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 32, 0);
-    gl.enableVertexAttribArray(colorLocation);
-    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 32, 12);
-    gl.enableVertexAttribArray(uvLocation);
-    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 32, 24);
+    const bindArchiveGeometry = buffer => {
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.enableVertexAttribArray(positionLocation);
+      gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 32, 0);
+      gl.enableVertexAttribArray(colorLocation);
+      gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 32, 12);
+      gl.enableVertexAttribArray(uvLocation);
+      gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 32, 24);
+    };
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, archiveTexture);
     const bob = archivePlayerMoving && !reducedMotion ? Math.sin(archiveElapsedTime * 10.5) * .025 : 0;
@@ -2637,7 +2676,16 @@
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uProjection'), false, projection);
     gl.uniform1f(gl.getUniformLocation(archiveProgram, 'uPulse'), (Math.sin(archiveElapsedTime * 2.2) + 1) / 2);
     gl.uniform1i(gl.getUniformLocation(archiveProgram, 'uTexture'), 0);
+    bindArchiveGeometry(archiveVertexBuffer);
     gl.drawArrays(gl.TRIANGLES, 0, archiveVertexCount);
+    const wraithGeometry = createArchiveWraithGeometry(archiveWraithSnapshot, time);
+    archiveWraithVertexCount = wraithGeometry.length / 8;
+    gl.bindBuffer(gl.ARRAY_BUFFER, archiveWraithBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, wraithGeometry, gl.DYNAMIC_DRAW);
+    bindArchiveGeometry(archiveWraithBuffer);
+    gl.drawArrays(gl.TRIANGLES, 0, archiveWraithVertexCount);
+    archiveCanvas.dataset.wraithVertices = String(archiveWraithVertexCount);
+    archiveCanvas.dataset.wraithVisualState = archiveWraithSnapshot.find(actor => actor.state !== 'patrol')?.state || 'patrol';
     archiveAnimationFrame = window.requestAnimationFrame(renderArchiveFrame);
   }
 
