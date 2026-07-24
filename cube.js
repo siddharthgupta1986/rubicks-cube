@@ -517,6 +517,14 @@
       Object.freeze({ id: 'dawn-roof-shutter', minimum: Object.freeze([96.3,0,-181.7]), maximum: Object.freeze([103.7,4.1,-181.1]), material: 'iron', collision: true, opensWith: 'dawn-vault', travel: 4.35 })
     ])
   });
+  const archiveWraithSimulation = window.CubeWardenWraiths.createSimulation([
+    { id: 'ash-wraith', speed: 1.15, route: [{ x: -3.8, z: -15 }, { x: 3.8, z: -22 }, { x: -3.4, z: -25 }] },
+    { id: 'glass-wraith', speed: 1.2, route: [{ x: 8, z: -38 }, { x: 20, z: -38 }, { x: 18, z: -53 }] },
+    { id: 'sunken-wraith', speed: 1.1, route: [{ x: 39, z: -62 }, { x: 62, z: -62 }, { x: 60, z: -79 }] },
+    { id: 'iron-wraith', speed: 1.3, route: [{ x: 59, z: -86 }, { x: 78, z: -86 }, { x: 76, z: -111 }] },
+    { id: 'star-wraith', speed: 1.25, route: [{ x: 74, z: -122 }, { x: 78, z: -136 }, { x: 74, z: -143 }] },
+    { id: 'warden-wraith', speed: 1.35, route: [{ x: 82, z: -150 }, { x: 99, z: -150 }, { x: 100, z: -176 }] }
+  ]);
   let dailyChallengeActive = false;
   let dailyChallengePreparing = false;
   let dailyChallengeStartedAt = 0;
@@ -2337,6 +2345,20 @@
     archiveCanvas.dataset.playerMoving = String(archivePlayerMoving);
   }
 
+  function updateArchiveWraithSimulation(delta) {
+    const actors = archiveWraithSimulation.update(delta * 1000, {
+      paused: archiveRuntimePhase !== 'exploration',
+      player: { x: archivePlayer.x, z: archivePlayer.z }
+    });
+    const nearest = actors.reduce((result, actor) => {
+      const distance = Math.hypot(actor.x - archivePlayer.x, actor.z - archivePlayer.z);
+      return !result || distance < result.distance ? { ...actor, distance } : result;
+    }, null);
+    archiveCanvas.dataset.wraithCount = String(actors.length);
+    archiveCanvas.dataset.wraithState = nearest?.state || 'unavailable';
+    archiveCanvas.dataset.wraithDistance = nearest ? nearest.distance.toFixed(2) : 'unavailable';
+  }
+
   function activeArchiveSeal() {
     const encounter = currentStoryEncounter();
     return archiveWorld.seals.find(seal => seal.id === encounter.id) || null;
@@ -2464,6 +2486,7 @@
     updateArchiveWorldChange(time);
     moveArchivePlayer(delta);
     updateArchivePlayerDiagnostics();
+    updateArchiveWraithSimulation(delta);
     updateArchiveSealProximity();
     const gl = archiveGl;
     const { width, height } = resizeArchiveCanvas();
