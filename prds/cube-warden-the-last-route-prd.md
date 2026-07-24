@@ -1,5 +1,9 @@
 # Cube Warden: The Last Route Product Requirements Document
 
+> Superseded for campaign development by
+> `cube-warden-archive-prd.md`. This document remains as the historical contract
+> for the illustrated route implementation.
+
 ## Product summary
 
 Cube Warden transforms Cube Academy into a story-first puzzle adventure. Aya,
