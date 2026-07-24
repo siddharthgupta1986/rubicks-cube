@@ -20,7 +20,7 @@ Then visit `http://127.0.0.1:4173`.
 - Six illustrated sectors and twelve sequential, checkpointed encounters.
 - Deterministic legal setup moves and state-based objectives that accept alternate valid solutions.
 - A five-step pursuit system, three-level hints, family-safe failure, and checkpoint retry.
-- Versioned `rubiks-cube.story.v1` progress that remains separate from Cube Academy data.
+- Versioned `rubiks-cube.archive.v2` campaign progress that remains separate from legacy Story and Cube Academy data.
 - Original local artwork under `assets/cube-warden/`; the game makes no network requests.
 - Six-face CSS 3D cube; drag to inspect every side.
 - Clockwise and counter-clockwise turns for all six faces.

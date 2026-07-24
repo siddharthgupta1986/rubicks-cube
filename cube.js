@@ -192,7 +192,7 @@
   const feedbackStorageKey = 'rubiks-cube.feedback.v1';
   const twoPlayerHistoryStorageKey = 'rubiks-cube.two-player-history.v1';
   const academyStorageKey = 'rubiks-cube.academy.v1';
-  const storyStorageKey = 'rubiks-cube.story.v1';
+  const storyStorageKey = 'rubiks-cube.archive.v2';
   const keyboardShortcuts = Object.freeze({
     'r': 'R', 'u': 'U', 'f': 'F', 'd': 'D', 'l': 'L', 'b': 'B',
     'R': "R'", 'U': "U'", 'F': "F'", 'D': "D'", 'L': "L'", 'B': "B'"
@@ -215,7 +215,7 @@
     cross: Object.freeze({ label: 'Cross-training view', x: -20, y: -42 }),
     reset: Object.freeze({ label: 'Reset view', x: -28, y: 36 })
   });
-  const storyVersion = 1;
+  const storyVersion = 2;
   const storyEncounters = Object.freeze([
     Object.freeze({ id: 'gatehouse', sector: 'Ash Gate', location: 'Gatehouse', narrative: 'The first seal recognizes intent. Teach it the four-turn Warden signal.', objective: "Make R, U, R', U' in order.", setupMoves: Object.freeze([]), validatorId: 'sequence', progressId: 'sequence', targetMoves: 4, pressureBudget: 5, hints: Object.freeze(['Keep white on top and green facing you.', 'R turns the right face; U turns the top face.', "Use R, U, R', U'. The apostrophe means counter-clockwise."]) }),
     Object.freeze({ id: 'compass-hall', sector: 'Ash Gate', location: 'Compass Hall', narrative: 'The compass has been turned away from dawn. Walk its last four steps backward.', objective: 'Return the cube to six solid-color faces.', setupMoves: Object.freeze(['R', 'U', "R'", "U'"]), validatorId: 'solved', progressId: 'solvedFaces', targetMoves: 4, pressureBudget: 5, hints: Object.freeze(['Undo moves in reverse order.', "The inverse of U' is U, and the inverse of R' is R.", "Use U, R, U', R'."]) }),
@@ -1787,8 +1787,11 @@
     return {
       version: storyVersion,
       currentEncounterId: storyEncounters[0].id,
+      checkpointSealId: 'archive-entrance',
       completedEncounterIds: [],
       bestMoveCounts: {},
+      discoveries: [],
+      accessibility: { pursuit: 'standard' },
       retries: 0,
       storyCompleted: false,
       updatedAt: ''
@@ -1797,23 +1800,34 @@
 
   function sanitizeStoryProgress(value) {
     if (!value || value.version !== storyVersion) return defaultStoryProgress();
-    const completedEncounterIds = [...new Set(Array.isArray(value.completedEncounterIds) ? value.completedEncounterIds.filter(id => storyEncounterIds.has(id)) : [])]
-      .sort((a, b) => storyEncounters.findIndex(encounter => encounter.id === a) - storyEncounters.findIndex(encounter => encounter.id === b));
+    const requestedCompleted = new Set(Array.isArray(value.completedSealIds) ? value.completedSealIds.filter(id => storyEncounterIds.has(id)) : []);
+    const completedEncounterIds = [];
+    for (const encounter of storyEncounters) {
+      if (!requestedCompleted.has(encounter.id)) break;
+      completedEncounterIds.push(encounter.id);
+    }
     const bestMoveCounts = {};
     if (value.bestMoveCounts && typeof value.bestMoveCounts === 'object' && !Array.isArray(value.bestMoveCounts)) {
       Object.entries(value.bestMoveCounts).forEach(([id, count]) => {
-        if (storyEncounterIds.has(id) && Number.isInteger(count) && count > 0) bestMoveCounts[id] = count;
+        if (completedEncounterIds.includes(id) && Number.isInteger(count) && count > 0) bestMoveCounts[id] = count;
       });
     }
     const firstIncomplete = storyEncounters.find(encounter => !completedEncounterIds.includes(encounter.id));
-    const requestedEncounter = storyEncounterIds.has(value.currentEncounterId) ? value.currentEncounterId : '';
     const storyCompleted = completedEncounterIds.length === storyEncounters.length && value.storyCompleted === true;
+    const checkpointSealId = completedEncounterIds.at(-1) || 'archive-entrance';
+    const discoveries = [...new Set(Array.isArray(value.discoveries)
+      ? value.discoveries.filter(id => typeof id === 'string' && /^[a-z0-9-]{1,64}$/.test(id))
+      : [])].slice(0, 64);
+    const pursuit = ['standard', 'slow', 'off'].includes(value.accessibility?.pursuit) ? value.accessibility.pursuit : 'standard';
     return {
       version: storyVersion,
-      currentEncounterId: storyCompleted ? storyEncounters[storyEncounters.length - 1].id : requestedEncounter || firstIncomplete?.id || storyEncounters[0].id,
+      currentEncounterId: storyCompleted ? storyEncounters[storyEncounters.length - 1].id : firstIncomplete?.id || storyEncounters[0].id,
+      checkpointSealId,
       completedEncounterIds,
       bestMoveCounts,
-      retries: Number.isInteger(value.retries) && value.retries >= 0 ? value.retries : 0,
+      discoveries,
+      accessibility: { pursuit },
+      retries: 0,
       storyCompleted,
       updatedAt: typeof value.updatedAt === 'string' && !Number.isNaN(Date.parse(value.updatedAt)) ? value.updatedAt : ''
     };
@@ -1829,7 +1843,18 @@
 
   function saveStoryProgress() {
     storyProgressState.updatedAt = new Date().toISOString();
-    try { window.localStorage.setItem(storyStorageKey, JSON.stringify(storyProgressState)); } catch (error) { /* optional */ }
+    storyProgressState.checkpointSealId = storyProgressState.completedEncounterIds.at(-1) || 'archive-entrance';
+    const record = {
+      version: storyVersion,
+      checkpointSealId: storyProgressState.checkpointSealId,
+      completedSealIds: storyProgressState.completedEncounterIds.slice(),
+      bestMoveCounts: { ...storyProgressState.bestMoveCounts },
+      discoveries: storyProgressState.discoveries.slice(),
+      accessibility: { ...storyProgressState.accessibility },
+      storyCompleted: storyProgressState.storyCompleted,
+      updatedAt: storyProgressState.updatedAt
+    };
+    try { window.localStorage.setItem(storyStorageKey, JSON.stringify(record)); } catch (error) { /* optional */ }
   }
 
   function resetStoryProgress() {
@@ -2101,6 +2126,7 @@
       archiveCanvas.dataset.vertices = String(archiveVertexCount);
       archiveCanvas.dataset.collisionSolids = String(archiveWorld.solids.filter(solid => solid.collision).length);
       archiveCanvas.dataset.gatehouseDoor = archiveGeometryProgress.toFixed(2);
+      archiveCanvas.dataset.storageKey = storyStorageKey;
       return true;
     } catch (error) {
       archiveRendererAvailable = false;
