@@ -301,11 +301,40 @@
   let archiveGl = null;
   let archiveProgram = null;
   let archiveVertexBuffer = null;
+  let archiveTexture = null;
   let archiveVertexCount = 0;
   let archiveAnimationFrame = 0;
   let archiveLastFrameTime = 0;
   let archiveElapsedTime = 0;
   let archiveRendererAvailable = true;
+  const archiveMaterials = Object.freeze({
+    stone: Object.freeze({ tint: Object.freeze([.64,.72,.70]), atlas: Object.freeze([0,0,.5,.5]) }),
+    iron: Object.freeze({ tint: Object.freeze([.58,.49,.38]), atlas: Object.freeze([.5,0,1,.5]) }),
+    floor: Object.freeze({ tint: Object.freeze([.72,.68,.55]), atlas: Object.freeze([0,.5,.5,1]) }),
+    seal: Object.freeze({ tint: Object.freeze([1,.76,.28]), atlas: Object.freeze([.5,.5,1,1]) })
+  });
+  const archiveWorld = Object.freeze({
+    bounds: Object.freeze({ minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([6,5,5]) }),
+    surfaces: Object.freeze([
+      Object.freeze({ id: 'gatehouse-floor', points: Object.freeze([[-6,0,5],[6,0,5],[6,0,-28],[-6,0,-28]]), material: 'floor', tile: Object.freeze([5,12]) }),
+      Object.freeze({ id: 'gatehouse-ceiling', points: Object.freeze([[-6,5,-28],[6,5,-28],[6,5,5],[-6,5,5]]), material: 'stone', tile: Object.freeze([5,12]) })
+    ]),
+    solids: Object.freeze([
+      Object.freeze({ id: 'west-wall', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-5.7,5,5]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'east-wall', minimum: Object.freeze([5.7,0,-28]), maximum: Object.freeze([6,5,5]), material: 'stone', collision: true }),
+      ...[0,-6,-12,-18,-24].flatMap((z, index) => [
+        Object.freeze({ id: `west-column-${index}`, minimum: Object.freeze([-5.7,0,z-.58]), maximum: Object.freeze([-4.95,4.65,z+.58]), material: 'stone', collision: true }),
+        Object.freeze({ id: `east-column-${index}`, minimum: Object.freeze([4.95,0,z-.58]), maximum: Object.freeze([5.7,4.65,z+.58]), material: 'stone', collision: true }),
+        Object.freeze({ id: `ceiling-beam-${index}`, minimum: Object.freeze([-5.1,4.25,z-.46]), maximum: Object.freeze([5.1,4.82,z+.46]), material: 'iron', collision: false })
+      ]),
+      Object.freeze({ id: 'seal-dais', minimum: Object.freeze([-1.65,0,-11.5]), maximum: Object.freeze([1.65,.78,-8.2]), material: 'floor', collision: true }),
+      Object.freeze({ id: 'gatehouse-seal', minimum: Object.freeze([-.72,.78,-10.45]), maximum: Object.freeze([.72,1.78,-9.25]), material: 'seal', collision: true }),
+      Object.freeze({ id: 'gatehouse-door', minimum: Object.freeze([-2.15,0,-27.72]), maximum: Object.freeze([2.15,4.1,-27.12]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'gatehouse-back-west', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-2.15,5,-27.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gatehouse-back-east', minimum: Object.freeze([2.15,0,-28]), maximum: Object.freeze([6,5,-27.7]), material: 'stone', collision: true }),
+      Object.freeze({ id: 'gatehouse-back-top', minimum: Object.freeze([-2.15,4.1,-28]), maximum: Object.freeze([2.15,5,-27.7]), material: 'stone', collision: true })
+    ])
+  });
   let dailyChallengeActive = false;
   let dailyChallengePreparing = false;
   let dailyChallengeStartedAt = 0;
@@ -1833,13 +1862,16 @@
     const vertexShader = createArchiveShader(gl, gl.VERTEX_SHADER, `
       attribute vec3 aPosition;
       attribute vec3 aColor;
+      attribute vec2 aUv;
       uniform mat4 uView;
       uniform mat4 uProjection;
       varying vec3 vColor;
+      varying vec2 vUv;
       varying float vDepth;
       void main() {
         vec4 viewPosition = uView * vec4(aPosition, 1.0);
         vColor = aColor;
+        vUv = aUv;
         vDepth = -viewPosition.z;
         gl_Position = uProjection * viewPosition;
       }
@@ -1847,12 +1879,15 @@
     const fragmentShader = createArchiveShader(gl, gl.FRAGMENT_SHADER, `
       precision mediump float;
       varying vec3 vColor;
+      varying vec2 vUv;
       varying float vDepth;
       uniform float uPulse;
+      uniform sampler2D uTexture;
       void main() {
         float fog = smoothstep(8.0, 34.0, vDepth);
         float light = 0.82 + uPulse * 0.12;
-        vec3 litColor = vColor * light;
+        vec3 material = texture2D(uTexture, vUv).rgb;
+        vec3 litColor = material * vColor * light;
         gl_FragColor = vec4(mix(litColor, vec3(0.012, 0.027, 0.032), fog), 1.0);
       }
     `);
@@ -1870,36 +1905,96 @@
     return program;
   }
 
-  function addArchiveQuad(vertices, a, b, c, d, color) {
-    [a, b, c, a, c, d].forEach(point => vertices.push(...point, ...color));
+  function addArchiveQuad(vertices, a, b, c, d, materialName, tile = [1,1]) {
+    const material = archiveMaterials[materialName] || archiveMaterials.stone;
+    const [u0,v0,u1,v1] = material.atlas;
+    const inset = .002;
+    const uv = [[u0+inset,v0+inset],[u1-inset,v0+inset],[u1-inset,v1-inset],[u0+inset,v1-inset]];
+    [[a,uv[0]],[b,uv[1]],[c,uv[2]],[a,uv[0]],[c,uv[2]],[d,uv[3]]].forEach(([point,texturePoint]) => {
+      vertices.push(...point, ...material.tint, ...texturePoint);
+    });
   }
 
-  function addArchiveBox(vertices, minimum, maximum, color) {
+  function addArchiveBox(vertices, minimum, maximum, materialName) {
     const [x0, y0, z0] = minimum;
     const [x1, y1, z1] = maximum;
-    addArchiveQuad(vertices, [x0,y0,z1], [x1,y0,z1], [x1,y1,z1], [x0,y1,z1], color);
-    addArchiveQuad(vertices, [x1,y0,z0], [x0,y0,z0], [x0,y1,z0], [x1,y1,z0], color);
-    addArchiveQuad(vertices, [x0,y0,z0], [x0,y0,z1], [x0,y1,z1], [x0,y1,z0], color.map(value => value * .72));
-    addArchiveQuad(vertices, [x1,y0,z1], [x1,y0,z0], [x1,y1,z0], [x1,y1,z1], color.map(value => value * .82));
-    addArchiveQuad(vertices, [x0,y1,z1], [x1,y1,z1], [x1,y1,z0], [x0,y1,z0], color.map(value => value * 1.08));
+    const horizontalTile = [Math.max(1, Math.round(Math.abs(x1-x0))), Math.max(1, Math.round(Math.abs(y1-y0)))];
+    const depthTile = [Math.max(1, Math.round(Math.abs(z1-z0))), Math.max(1, Math.round(Math.abs(y1-y0)))];
+    addArchiveQuad(vertices, [x0,y0,z1], [x1,y0,z1], [x1,y1,z1], [x0,y1,z1], materialName, horizontalTile);
+    addArchiveQuad(vertices, [x1,y0,z0], [x0,y0,z0], [x0,y1,z0], [x1,y1,z0], materialName, horizontalTile);
+    addArchiveQuad(vertices, [x0,y0,z0], [x0,y0,z1], [x0,y1,z1], [x0,y1,z0], materialName, depthTile);
+    addArchiveQuad(vertices, [x1,y0,z1], [x1,y0,z0], [x1,y1,z0], [x1,y1,z1], materialName, depthTile);
+    addArchiveQuad(vertices, [x0,y1,z1], [x1,y1,z1], [x1,y1,z0], [x0,y1,z0], materialName, [horizontalTile[0], depthTile[0]]);
   }
 
   function createArchiveBootstrapGeometry() {
     const vertices = [];
-    addArchiveQuad(vertices, [-6,0,5], [6,0,5], [6,0,-28], [-6,0,-28], [.16,.19,.18]);
-    addArchiveQuad(vertices, [-6,5,-28], [6,5,-28], [6,5,5], [-6,5,5], [.08,.12,.13]);
-    addArchiveQuad(vertices, [-6,0,-28], [-6,0,5], [-6,5,5], [-6,5,-28], [.10,.16,.17]);
-    addArchiveQuad(vertices, [6,0,5], [6,0,-28], [6,5,-28], [6,5,5], [.12,.15,.15]);
-    addArchiveQuad(vertices, [6,0,-28], [-6,0,-28], [-6,5,-28], [6,5,-28], [.07,.11,.12]);
-    for (let z = 0; z >= -24; z -= 6) {
-      addArchiveBox(vertices, [-5.75,0,z - .55], [-5.05,4.65,z + .55], [.18,.25,.24]);
-      addArchiveBox(vertices, [5.05,0,z - .55], [5.75,4.65,z + .55], [.18,.23,.23]);
-      addArchiveBox(vertices, [-5.1,4.25,z - .45], [5.1,4.8,z + .45], [.15,.21,.21]);
-    }
-    addArchiveBox(vertices, [-1.65,0,-11.5], [1.65,.78,-8.2], [.28,.24,.15]);
-    addArchiveBox(vertices, [-.72,.78,-10.45], [.72,1.78,-9.25], [.62,.43,.16]);
-    addArchiveBox(vertices, [-2.15,0,-27.7], [2.15,4.1,-27.15], [.22,.17,.10]);
+    archiveWorld.surfaces.forEach(surface => addArchiveQuad(vertices, ...surface.points, surface.material, surface.tile));
+    archiveWorld.solids.forEach(solid => addArchiveBox(vertices, solid.minimum, solid.maximum, solid.material));
     return new Float32Array(vertices);
+  }
+
+  function createArchiveTexture(gl) {
+    const source = document.createElement('canvas');
+    source.width = 512;
+    source.height = 512;
+    const context = source.getContext('2d');
+    const drawNoise = (x, y, size, base, mortar, pattern) => {
+      context.fillStyle = base;
+      context.fillRect(x, y, size, size);
+      context.strokeStyle = mortar;
+      context.lineWidth = 3;
+      pattern(context, x, y, size);
+      for (let index = 0; index < 900; index += 1) {
+        const px = x + (index * 83 % size);
+        const py = y + (index * 47 % size);
+        const alpha = .025 + (index % 7) * .006;
+        context.fillStyle = `rgba(255,255,255,${alpha})`;
+        context.fillRect(px, py, 1 + index % 2, 1 + index % 2);
+      }
+    };
+    drawNoise(0,0,256,'#344443','#172321',(ctx,x,y,size) => {
+      for (let row = 0; row <= size; row += 48) {
+        ctx.beginPath(); ctx.moveTo(x,y+row); ctx.lineTo(x+size,y+row); ctx.stroke();
+        const offset = row % 96 ? 34 : 0;
+        for (let column = offset; column <= size; column += 68) {
+          ctx.beginPath(); ctx.moveTo(x+column,y+row); ctx.lineTo(x+column,y+Math.min(size,row+48)); ctx.stroke();
+        }
+      }
+    });
+    drawNoise(256,0,256,'#594939','#241f1b',(ctx,x,y,size) => {
+      for (let line = 0; line <= size; line += 28) {
+        ctx.beginPath(); ctx.moveTo(x+line,y); ctx.lineTo(x+line,y+size); ctx.stroke();
+      }
+      ctx.fillStyle = '#8c6a3e';
+      for (let rivet = 14; rivet < size; rivet += 56) ctx.fillRect(x+rivet,y+14,5,5);
+    });
+    drawNoise(0,256,256,'#4f5148','#292d2b',(ctx,x,y,size) => {
+      for (let line = 0; line <= size; line += 64) {
+        ctx.beginPath(); ctx.moveTo(x+line,y); ctx.lineTo(x+line,y+size); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x,y+line); ctx.lineTo(x+size,y+line); ctx.stroke();
+      }
+    });
+    const sealGradient = context.createRadialGradient(384,384,12,384,384,120);
+    sealGradient.addColorStop(0,'#fff0a1');
+    sealGradient.addColorStop(.38,'#d9982c');
+    sealGradient.addColorStop(1,'#4b2d12');
+    context.fillStyle = sealGradient;
+    context.fillRect(256,256,256,256);
+    context.strokeStyle = '#f5c85d';
+    context.lineWidth = 5;
+    for (let ring = 34; ring < 122; ring += 24) {
+      context.beginPath(); context.arc(384,384,ring,0,Math.PI*2); context.stroke();
+    }
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+    return texture;
   }
 
   function archivePerspective(fieldOfView, aspect, near, far) {
@@ -1942,7 +2037,7 @@
   }
 
   function initializeArchiveRenderer() {
-    if (archiveGl && archiveProgram && archiveVertexBuffer) return true;
+    if (archiveGl && archiveProgram && archiveVertexBuffer && archiveTexture) return true;
     const gl = archiveCanvas.getContext('webgl', { alpha: false, antialias: true, powerPreference: 'high-performance' });
     if (!gl) {
       archiveRendererAvailable = false;
@@ -1953,12 +2048,14 @@
       archiveProgram = createArchiveProgram(gl);
       archiveVertexBuffer = gl.createBuffer();
       const geometry = createArchiveBootstrapGeometry();
-      archiveVertexCount = geometry.length / 6;
+      archiveVertexCount = geometry.length / 8;
       gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+      archiveTexture = createArchiveTexture(gl);
       archiveGl = gl;
       archiveRendererAvailable = true;
       archiveCanvas.dataset.vertices = String(archiveVertexCount);
+      archiveCanvas.dataset.collisionSolids = String(archiveWorld.solids.filter(solid => solid.collision).length);
       return true;
     } catch (error) {
       archiveRendererAvailable = false;
@@ -1996,15 +2093,21 @@
     gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
     const positionLocation = gl.getAttribLocation(archiveProgram, 'aPosition');
     const colorLocation = gl.getAttribLocation(archiveProgram, 'aColor');
+    const uvLocation = gl.getAttribLocation(archiveProgram, 'aUv');
     gl.enableVertexAttribArray(positionLocation);
-    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 24, 0);
+    gl.vertexAttribPointer(positionLocation, 3, gl.FLOAT, false, 32, 0);
     gl.enableVertexAttribArray(colorLocation);
-    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 24, 12);
+    gl.vertexAttribPointer(colorLocation, 3, gl.FLOAT, false, 32, 12);
+    gl.enableVertexAttribArray(uvLocation);
+    gl.vertexAttribPointer(uvLocation, 2, gl.FLOAT, false, 32, 24);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, archiveTexture);
     const view = archiveLookAt([0,1.65,4.3], [0,1.45,-11], [0,1,0]);
     const projection = archivePerspective(Math.PI / 3.15, width / height, .1, 60);
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uView'), false, view);
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uProjection'), false, projection);
     gl.uniform1f(gl.getUniformLocation(archiveProgram, 'uPulse'), (Math.sin(archiveElapsedTime * 2.2) + 1) / 2);
+    gl.uniform1i(gl.getUniformLocation(archiveProgram, 'uTexture'), 0);
     gl.drawArrays(gl.TRIANGLES, 0, archiveVertexCount);
     archiveAnimationFrame = window.requestAnimationFrame(renderArchiveFrame);
   }
@@ -3041,7 +3144,8 @@
       active: Boolean(archiveAnimationFrame),
       width: archiveCanvas.width,
       height: archiveCanvas.height,
-      vertices: archiveVertexCount
+      vertices: archiveVertexCount,
+      collisionSolids: archiveWorld.solids.filter(solid => solid.collision).length
     })
   });
 })();
