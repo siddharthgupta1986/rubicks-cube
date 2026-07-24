@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Guide Aya through a story-driven Rubik's Cube adventure.">
   <title>Cube Warden: The Last Route</title>
-  <link rel="stylesheet" href="styles.css?v=cube-warden-2">
+  <link rel="stylesheet" href="styles.css?v=cube-warden-3">
 </head>
 <body>
   <main class="app" aria-labelledby="page-title">
@@ -35,7 +35,7 @@
         <button class="story-primary" type="button" id="story-map-continue">Approach the Gatehouse</button>
       </section>
       <button class="story-menu-toggle" type="button" id="story-menu-toggle" aria-expanded="false" aria-controls="story-menu" aria-label="Open game menu">Menu</button>
-      <section class="story-menu" id="story-menu" hidden aria-label="Game menu">
+      <section class="story-menu" id="story-menu" role="dialog" aria-modal="true" hidden aria-label="Game menu">
         <div class="story-menu-heading">
           <h2>Game menu</h2>
           <button type="button" id="story-menu-close" aria-label="Close game menu">Close</button>
@@ -84,12 +84,12 @@
         <fieldset class="story-turns" id="story-turn-controls">
           <legend>Turn a face</legend>
           <div class="story-turn-grid">
-            <button type="button" data-story-move="U">U</button><button type="button" data-story-move="U'">U′</button>
-            <button type="button" data-story-move="R">R</button><button type="button" data-story-move="R'">R′</button>
-            <button type="button" data-story-move="F">F</button><button type="button" data-story-move="F'">F′</button>
-            <button type="button" data-story-move="D">D</button><button type="button" data-story-move="D'">D′</button>
-            <button type="button" data-story-move="L">L</button><button type="button" data-story-move="L'">L′</button>
-            <button type="button" data-story-move="B">B</button><button type="button" data-story-move="B'">B′</button>
+            <button type="button" data-story-move="U" aria-label="Turn Up clockwise">U</button><button type="button" data-story-move="U'" aria-label="Turn Up counter-clockwise">U′</button>
+            <button type="button" data-story-move="R" aria-label="Turn Right clockwise">R</button><button type="button" data-story-move="R'" aria-label="Turn Right counter-clockwise">R′</button>
+            <button type="button" data-story-move="F" aria-label="Turn Front clockwise">F</button><button type="button" data-story-move="F'" aria-label="Turn Front counter-clockwise">F′</button>
+            <button type="button" data-story-move="D" aria-label="Turn Down clockwise">D</button><button type="button" data-story-move="D'" aria-label="Turn Down counter-clockwise">D′</button>
+            <button type="button" data-story-move="L" aria-label="Turn Left clockwise">L</button><button type="button" data-story-move="L'" aria-label="Turn Left counter-clockwise">L′</button>
+            <button type="button" data-story-move="B" aria-label="Turn Back clockwise">B</button><button type="button" data-story-move="B'" aria-label="Turn Back counter-clockwise">B′</button>
           </div>
         </fieldset>
         <div class="story-encounter-actions">
@@ -350,6 +350,6 @@
       </div>
     </section>
   </main>
-  <script src="cube.js?v=cube-warden-9"></script>
+  <script src="cube.js?v=cube-warden-10"></script>
 </body>
 </html>
