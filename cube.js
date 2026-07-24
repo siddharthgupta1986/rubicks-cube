@@ -34,6 +34,7 @@
   const storyEncounterSector = document.getElementById('story-encounter-sector');
   const storyEncounterTitle = document.getElementById('story-encounter-title');
   const storyEncounterNarrative = document.getElementById('story-encounter-narrative');
+  const storyEncounterOrientation = document.getElementById('story-encounter-orientation');
   const storyEncounterObjective = document.getElementById('story-encounter-objective');
   const storyEnterSeal = document.getElementById('story-enter-seal');
   const storyBriefingMap = document.getElementById('story-briefing-map');
@@ -219,6 +220,25 @@
     Object.freeze({ id: 'dawn-vault', sector: 'Warden Keep', location: 'Dawn Vault', narrative: 'The final seal contains every lesson. Restore all six faces and bring back the dawn.', objective: 'Return the entire cube to its solved state.', setupMoves: Object.freeze(['R', 'U', "R'", "U'", 'F2', 'D', 'L', "D'", "L'", 'B', 'U2', "B'"]), validatorId: 'solved', progressId: 'solvedStickers', targetMoves: 80, pressureBudget: 5, hints: Object.freeze(['Solve in layers: white, middle, then yellow.', 'Use the Field Kit lessons if you need to review an algorithm.', 'Follow the objective steps already learned; any valid full solve counts.']) })
   ]);
   const storyEncounterIds = new Set(storyEncounters.map(encounter => encounter.id));
+  const storyEncounterContent = {
+    gatehouse: Object.freeze({
+      orientation: 'Hold white on top and green facing you. R turns the right face; U turns the top face.',
+      expectedMoves: Object.freeze(['R', 'U', "R'", "U'"]),
+      success: 'The Gatehouse answers the Warden signal. Its stone doors turn toward Compass Hall.'
+    }),
+    'compass-hall': Object.freeze({
+      orientation: 'Keep the same white-top, green-front view. Reverse the four setup moves from last to first.',
+      success: 'The compass points east again. Four glass lamps wake along the chapel road.'
+    }),
+    'chapel-steps': Object.freeze({
+      orientation: 'Keep white on top. Look for edge pieces with white plus one side color; corners have three colors.',
+      success: 'Two chapel lamps hold steady. The remaining white edges reveal the bridge alignment.'
+    }),
+    'mirror-bridge': Object.freeze({
+      orientation: 'Keep white on top and check the side color of every white edge against its center.',
+      success: 'Four mirrors agree. A solid path forms across the Glass Quarter.'
+    })
+  };
   const storyMapCoordinates = Object.freeze([
     Object.freeze({ x: 8, y: 82 }), Object.freeze({ x: 20, y: 73 }),
     Object.freeze({ x: 25, y: 61 }), Object.freeze({ x: 31, y: 47 }),
@@ -1770,6 +1790,7 @@
     storyEncounterSector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} of ${storyEncounters.length}`;
     storyEncounterTitle.textContent = encounter.location;
     storyEncounterNarrative.textContent = encounter.narrative;
+    storyEncounterOrientation.textContent = `Orientation: ${storyEncounterContent[encounter.id]?.orientation || 'Keep the cube steady and follow the objective one piece at a time.'}`;
     storyEncounterObjective.textContent = encounter.objective;
     storyEncounterStatus.textContent = 'Read the objective, then enter the seal.';
     document.body.dataset.experience = 'story-encounter';
@@ -1843,7 +1864,7 @@
     await runSequence(encounter.setupMoves, true);
     storyCheckpointIndex = history.length;
     storyPlayerMoves = 0;
-    storyTargetSignature = encounter.validatorId === 'sequence' ? simulatedSignature(['R', 'U', "R'", "U'"]) : '';
+    storyTargetSignature = encounter.validatorId === 'sequence' ? simulatedSignature(storyEncounterContent[encounter.id]?.expectedMoves || []) : '';
     storyPreparing = false;
     storyEncounterActive = true;
     storyBriefing.hidden = true;
@@ -1903,7 +1924,8 @@
     storyFailure.hidden = true;
     storyVictory.hidden = false;
     storyVictoryTitle.textContent = finalEncounter ? 'The Dawn Vault opens' : `${encounter.location} secured`;
-    storyVictorySummary.textContent = finalEncounter ? `All twelve seals are restored. Aya completed the final seal in ${storyPlayerMoves} moves.` : `The seal holds. ${storyPlayerMoves} moves recorded; the route to ${storyEncounters[encounterIndex + 1].location} is open.`;
+    const storyBeat = storyEncounterContent[encounter.id]?.success || 'The restored seal lights the next section of the route.';
+    storyVictorySummary.textContent = finalEncounter ? `All twelve seals are restored. Aya completed the final seal in ${storyPlayerMoves} moves.` : `${storyBeat} ${storyPlayerMoves} moves recorded; ${storyEncounters[encounterIndex + 1].location} is now open.`;
     storyVictoryContinue.textContent = finalEncounter ? 'See the Restored Route' : 'Continue the Route';
     storyEncounterStatus.textContent = `Seal restored in ${storyPlayerMoves} moves.`;
     storyVictoryContinue.focus();
