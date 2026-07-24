@@ -26,6 +26,7 @@
 - Route Story, Field Kit, Missions, Speedrun, Guided Solve, Daily Challenge, replay, and two-player transitions through the centralized cleanup contract.
 - Route Archive title, exploration, seal focus, pause, capture, epilogue, and Field Kit changes through `setArchiveRuntimePhase`; keep `data-archive-phase` in sync for diagnostics.
 - Keep authored Archive solids and seal positions in `archiveWorld`; every route gate must name its prerequisite with `opensWith` so collision, animation, persistence, and diagnostics share one source of truth.
+- Keep Wraith state and timing in `archive-wraith.js`; exploration may signal the simulation, but rendering and DOM status must derive from snapshots rather than becoming a second AI state store.
 - Retry must reverse only moves made after the active Story checkpoint. Leaving Story must restore solved state through legal inverse moves.
 - Do not use `innerHTML` for dynamic strings. Build DOM nodes with `document.createElement` and `textContent`.
 - Maintain keyboard operation and live status messages for any new workflow.
