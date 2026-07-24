@@ -22,6 +22,7 @@ Then visit `http://127.0.0.1:4173`.
 - Landmark directions, seven safe wards, revisit-able areas, and optional side-room discoveries without a permanent minimap.
 - Deterministic Void Wraith patrol, warning, pursuit, search, capture, and safe recovery, with standard, slower, and no-chase exploration modes.
 - Animated shard-bodied Wraiths change silhouette and motion for patrol, warning, pursuit, and search, with a reduced-motion equivalent.
+- Threat-reactive lighting, depth fog, emissive seals, and bounded local dust particles add atmosphere without affecting collision or puzzle state.
 - Deterministic legal setup moves and state-based objectives that accept alternate valid solutions.
 - A five-step pursuit system, three-level hints, family-safe failure, and checkpoint retry.
 - Versioned `rubiks-cube.archive.v2` campaign progress that remains separate from legacy Story and Cube Academy data.
