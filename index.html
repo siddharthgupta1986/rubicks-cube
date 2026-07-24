@@ -70,6 +70,15 @@
           <span id="story-move-count">Moves: 0</span>
           <span id="story-progress-label">Seal progress: waiting</span>
         </div>
+        <section class="story-pursuit" aria-labelledby="story-pursuit-label">
+          <div class="story-pursuit-heading">
+            <span id="story-pursuit-label">Void Wraiths: Distant</span>
+            <span id="story-pursuit-count">0 of 5</span>
+          </div>
+          <div class="story-pursuit-track" id="story-pursuit-track" role="img" aria-label="Void Wraith pursuit: 0 of 5">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+        </section>
         <fieldset class="story-turns" id="story-turn-controls">
           <legend>Turn a face</legend>
           <div class="story-turn-grid">
@@ -82,8 +91,20 @@
           </div>
         </fieldset>
         <div class="story-encounter-actions">
+          <button type="button" id="story-hint">Ask Compass for a Hint</button>
           <button type="button" id="story-retry">Retry Seal</button>
           <button type="button" id="story-gameplay-map">Return to Map</button>
+        </div>
+        <p class="story-hint-text" id="story-hint-text" hidden></p>
+      </div>
+
+      <div class="story-failure" id="story-failure" hidden>
+        <p class="story-kicker">The shadows reached the chamber</p>
+        <h1>The seal went dark</h1>
+        <p>Aya's compass protected the checkpoint. Catch your breath and try the same cube again.</p>
+        <div class="story-encounter-actions">
+          <button class="story-primary" type="button" id="story-failure-retry">Retry from Checkpoint</button>
+          <button type="button" id="story-failure-map">Return to Map</button>
         </div>
       </div>
 
@@ -314,6 +335,6 @@
       </div>
     </section>
   </main>
-  <script src="cube.js?v=cube-warden-4"></script>
+  <script src="cube.js?v=cube-warden-5"></script>
 </body>
 </html>

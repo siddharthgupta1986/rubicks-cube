@@ -43,13 +43,21 @@
   const storyGameplayObjective = document.getElementById('story-gameplay-objective');
   const storyMoveCount = document.getElementById('story-move-count');
   const storyProgressLabel = document.getElementById('story-progress-label');
+  const storyPursuitLabel = document.getElementById('story-pursuit-label');
+  const storyPursuitCount = document.getElementById('story-pursuit-count');
+  const storyPursuitTrack = document.getElementById('story-pursuit-track');
   const storyTurnControls = document.getElementById('story-turn-controls');
+  const storyHint = document.getElementById('story-hint');
+  const storyHintText = document.getElementById('story-hint-text');
   const storyRetry = document.getElementById('story-retry');
   const storyGameplayMap = document.getElementById('story-gameplay-map');
   const storyVictory = document.getElementById('story-victory');
   const storyVictoryTitle = document.getElementById('story-victory-title');
   const storyVictorySummary = document.getElementById('story-victory-summary');
   const storyVictoryContinue = document.getElementById('story-victory-continue');
+  const storyFailure = document.getElementById('story-failure');
+  const storyFailureRetry = document.getElementById('story-failure-retry');
+  const storyFailureMap = document.getElementById('story-failure-map');
   const storyEncounterStatus = document.getElementById('story-encounter-status');
   const fieldKitContent = document.getElementById('field-kit-content');
   const fieldKitCube = document.getElementById('field-kit-cube');
@@ -264,6 +272,11 @@
   let storyCheckpointIndex = 0;
   let storyPlayerMoves = 0;
   let storyTargetSignature = '';
+  let storyPressure = 0;
+  let storyStagnantMoves = 0;
+  let storyLastProgress = 0;
+  let storyHintIndex = 0;
+  const storyPressureLabels = Object.freeze(['Distant', 'Searching', 'Closing', 'Near', 'At the Door', 'Reached']);
   const academyChapterTitles = ['Orientation', 'White cross', 'First layer', 'Middle layer', 'Yellow cross', 'Final solve'];
   let academyScreenState = 'journey';
   const lessonDrafts = [
@@ -1280,6 +1293,32 @@
     lastLayerPositioned: isYellowCornersPlaced
   });
 
+  function solvedStickerCount(predicate = () => true) {
+    return stickers.filter(sticker => predicate(sticker) && isSolvedAtPosition(sticker)).length;
+  }
+
+  function storySequenceProgress() {
+    const expected = ['R', 'U', "R'", "U'"];
+    const playerMoves = history.slice(storyCheckpointIndex);
+    let progress = 0;
+    while (progress < expected.length && playerMoves[progress] === expected[progress]) progress += 1;
+    return progress;
+  }
+
+  function storyProgressValue() {
+    const progressId = currentStoryEncounter().progressId;
+    if (progressId === 'sequence') return storySequenceProgress();
+    if (progressId === 'whiteEdges' || progressId === 'whiteCross') return whiteEdgeCount();
+    if (progressId === 'whiteCorners') return whiteCornerCount();
+    if (progressId === 'firstLayer') return solvedStickerCount(sticker => sticker.position[1] === 1);
+    if (progressId === 'middleEdges') return middleEdgeCount();
+    if (progressId === 'middleLayer') return solvedStickerCount(sticker => sticker.position[1] === 0 && sticker.normal[1] === 0);
+    if (progressId === 'yellowEdges') return stickers.filter(sticker => sticker.normal[1] === -1 && (sticker.position[0] === 0 || sticker.position[2] === 0) && sticker.color === 'yellow').length;
+    if (progressId === 'yellowFace') return stickers.filter(sticker => sticker.normal[1] === -1 && sticker.color === 'yellow').length;
+    if (progressId === 'solvedFaces' || progressId === 'solvedStickers') return solvedStickerCount();
+    return solvedStickerCount();
+  }
+
   function isGuidedStageComplete() {
     return guidedChecks[lessons[tutorStep].success]();
   }
@@ -1727,6 +1766,7 @@
     storyBriefing.hidden = false;
     storyGameplay.hidden = true;
     storyVictory.hidden = true;
+    storyFailure.hidden = true;
     storyEncounterSector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} of ${storyEncounters.length}`;
     storyEncounterTitle.textContent = encounter.location;
     storyEncounterNarrative.textContent = encounter.narrative;
@@ -1739,6 +1779,55 @@
   function storyEncounterComplete() {
     const encounter = currentStoryEncounter();
     return Boolean(storyValidators[encounter.validatorId]?.());
+  }
+
+  function renderStoryPursuit() {
+    const labelIndex = Math.min(storyPressure, storyPressureLabels.length - 1);
+    storyPursuitLabel.textContent = `Void Wraiths: ${storyPressureLabels[labelIndex]}`;
+    storyPursuitCount.textContent = `${storyPressure} of ${currentStoryEncounter().pressureBudget}`;
+    [...storyPursuitTrack.children].forEach((segment, index) => segment.classList.toggle('is-active', index < storyPressure));
+    storyPursuitTrack.setAttribute('aria-label', `Void Wraith pursuit: ${storyPressure} of ${currentStoryEncounter().pressureBudget}, ${storyPressureLabels[labelIndex]}`);
+  }
+
+  function resetStoryEncounterHud() {
+    storyPressure = 0;
+    storyStagnantMoves = 0;
+    storyHintIndex = 0;
+    storyLastProgress = storyProgressValue();
+    storyHintText.hidden = true;
+    storyHintText.textContent = '';
+    storyHint.disabled = false;
+    storyHint.textContent = 'Ask Compass for a Hint';
+    renderStoryPursuit();
+  }
+
+  function failStoryEncounter(reason) {
+    if (!storyEncounterActive) return;
+    storyEncounterActive = false;
+    storyGameplay.hidden = true;
+    storyFailure.hidden = false;
+    storyTurnControls.disabled = true;
+    storyEncounterStatus.textContent = `The Void Wraiths reached the chamber after ${reason}. The checkpoint is safe.`;
+    storyFailureRetry.focus();
+  }
+
+  function advanceStoryPressure(reason) {
+    if (!storyEncounterActive) return;
+    storyPressure = Math.min(currentStoryEncounter().pressureBudget, storyPressure + 1);
+    renderStoryPursuit();
+    if (storyPressure >= currentStoryEncounter().pressureBudget) failStoryEncounter(reason);
+    else storyEncounterStatus.textContent = `The Void Wraiths move closer: ${storyPressureLabels[storyPressure]}.`;
+  }
+
+  function useStoryHint() {
+    if (!storyEncounterActive || storyHintIndex >= 3) return;
+    const encounter = currentStoryEncounter();
+    storyHintText.textContent = `Compass hint ${storyHintIndex + 1}: ${encounter.hints[storyHintIndex]}`;
+    storyHintText.hidden = false;
+    storyHintIndex += 1;
+    storyHint.textContent = storyHintIndex >= 3 ? 'All Hints Revealed' : 'Ask for the Next Hint';
+    storyHint.disabled = storyHintIndex >= 3;
+    advanceStoryPressure('using a compass hint');
   }
 
   async function startStoryEncounter() {
@@ -1759,12 +1848,14 @@
     storyEncounterActive = true;
     storyBriefing.hidden = true;
     storyVictory.hidden = true;
+    storyFailure.hidden = true;
     storyGameplay.hidden = false;
     storyGameplaySector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} active`;
     storyGameplayTitle.textContent = encounter.location;
     storyGameplayObjective.textContent = encounter.objective;
     storyMoveCount.textContent = 'Moves: 0';
     storyProgressLabel.textContent = 'Seal progress: active';
+    resetStoryEncounterHud();
     storyEncounterStatus.textContent = `${encounter.location} ready. Make legal face turns to restore the seal.`;
     storyTurnControls.disabled = false;
     storyTurnControls.querySelector('button').focus();
@@ -1774,8 +1865,26 @@
     if (!storyEncounterActive) return;
     storyPlayerMoves += 1;
     storyMoveCount.textContent = `Moves: ${storyPlayerMoves}`;
-    storyProgressLabel.textContent = storyEncounterComplete() ? 'Seal progress: restored' : 'Seal progress: working';
-    if (storyEncounterComplete()) completeStoryEncounter();
+    if (storyEncounterComplete()) {
+      storyProgressLabel.textContent = 'Seal progress: restored';
+      completeStoryEncounter();
+      return;
+    }
+    const currentProgress = storyProgressValue();
+    storyProgressLabel.textContent = currentProgress > storyLastProgress ? 'Seal progress: improving' : currentProgress < storyLastProgress ? 'Seal progress: slipped' : 'Seal progress: holding';
+    if (currentProgress < storyLastProgress) {
+      storyStagnantMoves = 0;
+      advanceStoryPressure('losing seal progress');
+    } else if (currentProgress > storyLastProgress) {
+      storyStagnantMoves = 0;
+    } else {
+      storyStagnantMoves += 1;
+      if (storyStagnantMoves >= 4) {
+        storyStagnantMoves = 0;
+        advanceStoryPressure('four moves without progress');
+      }
+    }
+    storyLastProgress = currentProgress;
   }
 
   function completeStoryEncounter() {
@@ -1791,6 +1900,7 @@
     if (!finalEncounter) storyProgressState.currentEncounterId = storyEncounters[encounterIndex + 1].id;
     saveStoryProgress();
     storyGameplay.hidden = true;
+    storyFailure.hidden = true;
     storyVictory.hidden = false;
     storyVictoryTitle.textContent = finalEncounter ? 'The Dawn Vault opens' : `${encounter.location} secured`;
     storyVictorySummary.textContent = finalEncounter ? `All twelve seals are restored. Aya completed the final seal in ${storyPlayerMoves} moves.` : `The seal holds. ${storyPlayerMoves} moves recorded; the route to ${storyEncounters[encounterIndex + 1].location} is open.`;
@@ -1809,6 +1919,9 @@
     storyPlayerMoves = 0;
     storyMoveCount.textContent = 'Moves: 0';
     storyProgressLabel.textContent = 'Seal progress: active';
+    storyGameplay.hidden = false;
+    storyFailure.hidden = true;
+    resetStoryEncounterHud();
     storyEncounterActive = true;
     storyProgressState.retries += 1;
     saveStoryProgress();
@@ -2394,8 +2507,11 @@
     turn(button.dataset.storyMove);
     if (storyEncounterActive) storyEncounterStatus.textContent = `${button.dataset.storyMove} turn applied.`;
   });
+  storyHint.addEventListener('click', useStoryHint);
   storyRetry.addEventListener('click', retryStoryEncounter);
   storyGameplayMap.addEventListener('click', leaveStoryEncounterToMap);
+  storyFailureRetry.addEventListener('click', retryStoryEncounter);
+  storyFailureMap.addEventListener('click', leaveStoryEncounterToMap);
   storyVictoryContinue.addEventListener('click', continueStoryRoute);
 
   viewport.addEventListener('pointerdown', event => {

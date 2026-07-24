@@ -65,11 +65,19 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .story-encounter-actions { display: flex; flex-wrap: wrap; gap: 9px; }
 .story-encounter-actions button:not(.story-primary), .story-turn-grid button { color: #eef4f4; border-color: #52666c; background: #243237; }
 .story-gameplay-metrics { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 18px 0 12px; color: #d8e2e3; font-size: .82rem; font-weight: 750; }
+.story-pursuit { margin-bottom: 16px; padding: 11px 12px; border: 1px solid #465a60; background: #0d171a; }
+.story-pursuit-heading { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: #dce5e6; font-size: .76rem; font-weight: 800; }
+.story-pursuit-track { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.story-pursuit-track span { height: 8px; border: 1px solid #64767b; background: #253337; }
+.story-pursuit-track span.is-active { border-color: #d8675d; background: #c94f48; box-shadow: 0 0 10px rgba(201,79,72,.48); }
 .story-turns { margin: 0 0 16px; padding: 0; border: 0; }
 .story-turns legend { margin-bottom: 8px; color: #e6c06b; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
 .story-turn-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
 .story-turn-grid button { min-width: 0; min-height: 42px; padding: 0 5px; font-weight: 800; }
 .story-encounter-status { min-height: 1.4em; margin: 14px 0 0; color: #f0d792; font-size: .82rem; }
+.story-hint-text { margin: 12px 0 0; padding: 10px 12px; border-left: 3px solid #6ec8b3; color: #d7e4e2; background: #1d302f; line-height: 1.45; }
+.story-failure { margin: -20px; padding: clamp(28px, 5vw, 52px); border: 1px solid #703d3d; border-radius: 8px; background: linear-gradient(90deg, rgba(8,14,17,.96), rgba(8,14,17,.62)), url("assets/cube-warden/void-wraiths.jpg") center / cover; }
+.story-failure p:not(.story-kicker) { max-width: 460px; color: #d6dddd; line-height: 1.55; }
 .story-victory { padding: 20px 0; }
 .story-victory .story-primary { margin-top: 12px; }
 body[data-experience="story-encounter"] { color: #eef4f4; background: #10191c; }
