@@ -304,6 +304,8 @@
   let archiveVertexBuffer = null;
   let archiveTexture = null;
   let archiveVertexCount = 0;
+  let archiveGeometryProgress = -1;
+  let archivePendingWorldChange = null;
   let archiveAnimationFrame = 0;
   let archiveLastFrameTime = 0;
   let archiveElapsedTime = 0;
@@ -358,7 +360,7 @@
       ]),
       Object.freeze({ id: 'seal-dais', minimum: Object.freeze([-1.65,0,-11.5]), maximum: Object.freeze([1.65,.78,-8.2]), material: 'floor', collision: true }),
       Object.freeze({ id: 'gatehouse-seal', minimum: Object.freeze([-.72,.78,-10.45]), maximum: Object.freeze([.72,1.78,-9.25]), material: 'seal', collision: true }),
-      Object.freeze({ id: 'gatehouse-door', minimum: Object.freeze([-2.15,0,-27.72]), maximum: Object.freeze([2.15,4.1,-27.12]), material: 'iron', collision: true }),
+      Object.freeze({ id: 'gatehouse-door', minimum: Object.freeze([-2.15,0,-27.72]), maximum: Object.freeze([2.15,4.1,-27.12]), material: 'iron', collision: true, opensWith: 'gatehouse', travel: 4.35 }),
       Object.freeze({ id: 'gatehouse-back-west', minimum: Object.freeze([-6,0,-28]), maximum: Object.freeze([-2.15,5,-27.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'gatehouse-back-east', minimum: Object.freeze([2.15,0,-28]), maximum: Object.freeze([6,5,-27.7]), material: 'stone', collision: true }),
       Object.freeze({ id: 'gatehouse-back-top', minimum: Object.freeze([-2.15,4.1,-28]), maximum: Object.freeze([2.15,5,-27.7]), material: 'stone', collision: true })
@@ -1956,10 +1958,22 @@
     addArchiveQuad(vertices, [x0,y1,z1], [x1,y1,z1], [x1,y1,z0], [x0,y1,z0], materialName, [horizontalTile[0], depthTile[0]]);
   }
 
+  function archiveWorldChangeProgress(sealId) {
+    if (!storyProgressState.completedEncounterIds.includes(sealId)) return 0;
+    if (archivePendingWorldChange?.sealId === sealId) return archivePendingWorldChange.progress;
+    return 1;
+  }
+
   function createArchiveBootstrapGeometry() {
     const vertices = [];
     archiveWorld.surfaces.forEach(surface => addArchiveQuad(vertices, ...surface.points, surface.material, surface.tile));
-    archiveWorld.solids.forEach(solid => addArchiveBox(vertices, solid.minimum, solid.maximum, solid.material));
+    archiveWorld.solids.forEach(solid => {
+      const progress = solid.opensWith ? archiveWorldChangeProgress(solid.opensWith) : 0;
+      const travel = (solid.travel || 0) * progress;
+      const minimum = [solid.minimum[0], solid.minimum[1] + travel, solid.minimum[2]];
+      const maximum = [solid.maximum[0], solid.maximum[1] + travel, solid.maximum[2]];
+      addArchiveBox(vertices, minimum, maximum, solid.material);
+    });
     return new Float32Array(vertices);
   }
 
@@ -2079,12 +2093,14 @@
       const geometry = createArchiveBootstrapGeometry();
       archiveVertexCount = geometry.length / 8;
       gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.STATIC_DRAW);
+      gl.bufferData(gl.ARRAY_BUFFER, geometry, gl.DYNAMIC_DRAW);
+      archiveGeometryProgress = archiveWorldChangeProgress('gatehouse');
       archiveTexture = createArchiveTexture(gl);
       archiveGl = gl;
       archiveRendererAvailable = true;
       archiveCanvas.dataset.vertices = String(archiveVertexCount);
       archiveCanvas.dataset.collisionSolids = String(archiveWorld.solids.filter(solid => solid.collision).length);
+      archiveCanvas.dataset.gatehouseDoor = archiveGeometryProgress.toFixed(2);
       return true;
     } catch (error) {
       archiveRendererAvailable = false;
@@ -2108,6 +2124,7 @@
   function archivePositionBlocked(x, z) {
     return archiveWorld.solids.some(solid => {
       if (!solid.collision || solid.maximum[1] <= 0 || solid.minimum[1] >= archivePlayer.y + .15) return false;
+      if (solid.opensWith && storyProgressState.completedEncounterIds.includes(solid.opensWith)) return false;
       return x + archivePlayer.radius > solid.minimum[0]
         && x - archivePlayer.radius < solid.maximum[0]
         && z + archivePlayer.radius > solid.minimum[2]
@@ -2164,11 +2181,19 @@
 
   function activeArchiveSeal() {
     const encounter = currentStoryEncounter();
-    return archiveWorld.seals.find(seal => seal.id === encounter.id) || archiveWorld.seals[0];
+    return archiveWorld.seals.find(seal => seal.id === encounter.id) || null;
   }
 
   function updateArchiveSealProximity(force = false) {
     const seal = activeArchiveSeal();
+    if (!seal) {
+      archiveSealInRange = false;
+      archiveApproachSeal.hidden = true;
+      archiveCanvas.dataset.sealDistance = 'unavailable';
+      archiveCanvas.dataset.sealInRange = 'false';
+      archiveInteractionStatus.textContent = 'The Gatehouse is open. Continue through the portcullis to find the next seal.';
+      return;
+    }
     const distance = Math.hypot(archivePlayer.x - seal.position[0], archivePlayer.z - seal.position[2]);
     const inRange = distance <= seal.interactionRadius;
     archiveCanvas.dataset.sealDistance = distance.toFixed(2);
@@ -2181,6 +2206,35 @@
     archiveInteractionStatus.textContent = inRange
       ? `Seal within reach. Press E or activate the Restore ${encounter.location} seal button.`
       : `Explore the corridor to find the ${encounter.location} seal.`;
+  }
+
+  function queueArchiveWorldChange(sealId) {
+    archivePendingWorldChange = {
+      sealId,
+      progress: reducedMotion ? 1 : 0,
+      startedAt: 0
+    };
+    archiveGeometryProgress = -1;
+  }
+
+  function updateArchiveWorldChange(time) {
+    if (archivePendingWorldChange && archivePendingWorldChange.progress < 1) {
+      if (!archivePendingWorldChange.startedAt) archivePendingWorldChange.startedAt = time;
+      archivePendingWorldChange.progress = Math.min(1, (time - archivePendingWorldChange.startedAt) / 1450);
+      archiveCanvas.dataset.worldChange = `${archivePendingWorldChange.sealId}:${archivePendingWorldChange.progress.toFixed(2)}`;
+      if (archivePendingWorldChange.progress >= 1) {
+        storyShellStatus.textContent = 'Gatehouse restored. The portcullis is fully open and the passage ahead is safe to enter.';
+      }
+    }
+    const progress = archiveWorldChangeProgress('gatehouse');
+    if (progress === archiveGeometryProgress || !archiveGl || !archiveVertexBuffer) return;
+    const geometry = createArchiveBootstrapGeometry();
+    archiveVertexCount = geometry.length / 8;
+    archiveGl.bindBuffer(archiveGl.ARRAY_BUFFER, archiveVertexBuffer);
+    archiveGl.bufferData(archiveGl.ARRAY_BUFFER, geometry, archiveGl.DYNAMIC_DRAW);
+    archiveGeometryProgress = progress;
+    archiveCanvas.dataset.vertices = String(archiveVertexCount);
+    archiveCanvas.dataset.gatehouseDoor = progress.toFixed(2);
   }
 
   function beginArchiveSealFocus() {
@@ -2196,6 +2250,7 @@
     }
     archiveReturnAnchor = { x: archivePlayer.x, z: archivePlayer.z, yaw: archivePlayer.yaw };
     const seal = activeArchiveSeal();
+    if (!seal) return;
     archivePlayer.yaw = Math.atan2(seal.position[0] - archivePlayer.x, -(seal.position[2] - archivePlayer.z));
     updateArchivePlayerDiagnostics();
     showStoryBriefing();
@@ -2215,6 +2270,7 @@
     const delta = archiveLastFrameTime ? Math.min((time - archiveLastFrameTime) / 1000, .05) : 0;
     archiveLastFrameTime = time;
     archiveElapsedTime += delta;
+    updateArchiveWorldChange(time);
     moveArchivePlayer(delta);
     updateArchivePlayerDiagnostics();
     updateArchiveSealProximity();
@@ -2307,6 +2363,9 @@
     archiveProgress.textContent = `${completedCount} of ${storyEncounters.length} seals restored · Latest refuge: ${completedCount ? current.sector : 'Archive entrance'}`;
     archiveApproachSeal.textContent = storyProgressState.storyCompleted ? 'Enter the Dawn Vault' : `Approach ${current.location} seal`;
     archiveThreat.querySelector('strong').textContent = 'Wraiths distant';
+    if (storyProgressState.completedEncounterIds.includes('gatehouse')) {
+      archiveInteractionStatus.textContent = 'The Gatehouse portcullis is open. Continue deeper into the Archive.';
+    }
   }
 
   function showArchiveExploration() {
@@ -2468,6 +2527,7 @@
     storyProgressState.storyCompleted = finalEncounter;
     if (!finalEncounter) storyProgressState.currentEncounterId = storyEncounters[encounterIndex + 1].id;
     saveStoryProgress();
+    queueArchiveWorldChange(encounter.id);
     storyGameplay.hidden = true;
     storyFailure.hidden = true;
     storyVictory.hidden = false;
