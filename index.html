@@ -10,7 +10,7 @@
 <body>
   <main class="app" aria-labelledby="page-title">
     <section class="story-shell" id="story-shell" aria-labelledby="page-title">
-      <div class="story-title-copy">
+      <div class="story-title-copy" id="story-title-copy">
         <p class="story-kicker">The Broken Archive is falling</p>
         <h1 id="page-title">Cube Warden</h1>
         <p class="story-subtitle">The Last Route</p>
@@ -18,6 +18,22 @@
         <button class="story-primary" type="button" id="story-primary">Begin the Route</button>
         <p class="story-location" id="story-location">Ash Gate · Gatehouse</p>
       </div>
+      <section class="story-map-screen" id="story-map-screen" hidden aria-labelledby="story-map-title">
+        <div class="story-map-heading">
+          <div>
+            <p class="story-kicker">The Warden compass</p>
+            <h2 id="story-map-title">The Last Route</h2>
+            <p id="story-map-objective">The Gatehouse seal is waiting.</p>
+          </div>
+          <button type="button" id="story-map-back">Back</button>
+        </div>
+        <div class="story-map-visual" id="story-map-visual">
+          <ol class="story-route" id="story-route" aria-label="Twelve story checkpoints"></ol>
+          <img class="story-aya-marker" id="story-aya-marker" src="assets/cube-warden/aya-token.jpg" alt="">
+        </div>
+        <p class="story-route-summary" id="story-route-summary"></p>
+        <button class="story-primary" type="button" id="story-map-continue">Approach the Gatehouse</button>
+      </section>
       <button class="story-menu-toggle" type="button" id="story-menu-toggle" aria-expanded="false" aria-controls="story-menu" aria-label="Open game menu">Menu</button>
       <section class="story-menu" id="story-menu" hidden aria-label="Game menu">
         <div class="story-menu-heading">
@@ -249,6 +265,6 @@
       </div>
     </section>
   </main>
-  <script src="cube.js?v=cube-warden-2"></script>
+  <script src="cube.js?v=cube-warden-3"></script>
 </body>
 </html>

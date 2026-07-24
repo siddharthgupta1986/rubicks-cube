@@ -12,6 +12,7 @@
   const cube = document.getElementById('cube');
   const viewport = document.getElementById('cube-viewport');
   const storyShell = document.getElementById('story-shell');
+  const storyTitleCopy = document.getElementById('story-title-copy');
   const storyPrimary = document.getElementById('story-primary');
   const storyLocation = document.getElementById('story-location');
   const storyIntro = document.querySelector('.story-intro');
@@ -21,6 +22,13 @@
   const storyNewGame = document.getElementById('story-new-game');
   const storyFieldKit = document.getElementById('story-field-kit');
   const storyShellStatus = document.getElementById('story-shell-status');
+  const storyMapScreen = document.getElementById('story-map-screen');
+  const storyMapObjective = document.getElementById('story-map-objective');
+  const storyMapBack = document.getElementById('story-map-back');
+  const storyMapContinue = document.getElementById('story-map-continue');
+  const storyRoute = document.getElementById('story-route');
+  const storyRouteSummary = document.getElementById('story-route-summary');
+  const storyAyaMarker = document.getElementById('story-aya-marker');
   const fieldKitContent = document.getElementById('field-kit-content');
   const fieldKitCube = document.getElementById('field-kit-cube');
   const fieldKitExit = document.getElementById('field-kit-exit');
@@ -181,6 +189,14 @@
     Object.freeze({ id: 'dawn-vault', sector: 'Warden Keep', location: 'Dawn Vault', narrative: 'The final seal contains every lesson. Restore all six faces and bring back the dawn.', objective: 'Return the entire cube to its solved state.', setupMoves: Object.freeze(['R', 'U', "R'", "U'", 'F2', 'D', 'L', "D'", "L'", 'B', 'U2', "B'"]), validatorId: 'solved', progressId: 'solvedStickers', targetMoves: 80, pressureBudget: 5, hints: Object.freeze(['Solve in layers: white, middle, then yellow.', 'Use the Field Kit lessons if you need to review an algorithm.', 'Follow the objective steps already learned; any valid full solve counts.']) })
   ]);
   const storyEncounterIds = new Set(storyEncounters.map(encounter => encounter.id));
+  const storyMapCoordinates = Object.freeze([
+    Object.freeze({ x: 8, y: 82 }), Object.freeze({ x: 20, y: 73 }),
+    Object.freeze({ x: 25, y: 61 }), Object.freeze({ x: 31, y: 47 }),
+    Object.freeze({ x: 48, y: 65 }), Object.freeze({ x: 47, y: 49 }),
+    Object.freeze({ x: 46, y: 34 }), Object.freeze({ x: 62, y: 48 }),
+    Object.freeze({ x: 64, y: 33 }), Object.freeze({ x: 78, y: 39 }),
+    Object.freeze({ x: 82, y: 24 }), Object.freeze({ x: 90, y: 12 })
+  ]);
   let stickers = [];
   let history = [];
   let busy = false;
@@ -1560,6 +1576,8 @@
   function showStoryTitle(message = '') {
     closeStoryMenu();
     storyShell.hidden = false;
+    storyTitleCopy.hidden = false;
+    storyMapScreen.hidden = true;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
     storyPrimary.textContent = hasStoryProgress() ? 'Continue the Route' : 'Begin the Route';
@@ -1569,6 +1587,44 @@
     storyShellStatus.textContent = message;
     document.body.dataset.experience = 'story';
     storyPrimary.focus();
+  }
+
+  function renderStoryMap(travel = false) {
+    const current = currentStoryEncounter();
+    const currentIndex = storyEncounters.findIndex(encounter => encounter.id === current.id);
+    storyRoute.replaceChildren();
+    storyEncounters.forEach((encounter, index) => {
+      const node = document.createElement('li');
+      const completed = storyProgressState.completedEncounterIds.includes(encounter.id);
+      const state = completed ? 'completed' : index === currentIndex ? 'current' : 'ahead';
+      node.className = 'story-route-node';
+      node.dataset.state = state;
+      node.style.setProperty('--map-x', storyMapCoordinates[index].x);
+      node.style.setProperty('--map-y', storyMapCoordinates[index].y);
+      node.setAttribute('aria-label', `${index + 1}. ${encounter.location}: ${state}`);
+      node.textContent = String(index + 1);
+      storyRoute.append(node);
+    });
+    storyAyaMarker.style.setProperty('--aya-x', storyMapCoordinates[currentIndex].x);
+    storyAyaMarker.style.setProperty('--aya-y', storyMapCoordinates[currentIndex].y);
+    storyAyaMarker.classList.toggle('is-travelling', travel && !reducedMotion);
+    storyMapObjective.textContent = storyProgressState.storyCompleted ? 'The route is restored. Return to the Dawn Vault.' : `${current.location}: ${current.objective}`;
+    storyMapContinue.textContent = storyProgressState.storyCompleted ? 'Return to the Dawn Vault' : `Approach ${current.location}`;
+    const completedCount = storyProgressState.completedEncounterIds.length;
+    storyRouteSummary.textContent = `${completedCount} of ${storyEncounters.length} seals restored. Current checkpoint: ${current.sector}, ${current.location}. The route is fixed; darker nodes remain ahead.`;
+  }
+
+  function showStoryMap(travel = false) {
+    closeStoryMenu();
+    storyShell.hidden = false;
+    storyTitleCopy.hidden = true;
+    storyMapScreen.hidden = false;
+    fieldKitContent.hidden = true;
+    fieldKitCube.hidden = true;
+    document.body.dataset.experience = 'story-map';
+    saveStoryProgress();
+    renderStoryMap(travel);
+    storyMapContinue.focus();
   }
 
   function openFieldKit() {
@@ -1582,13 +1638,8 @@
   }
 
   function enterStoryRoute() {
-    saveStoryProgress();
+    showStoryMap();
     const encounter = currentStoryEncounter();
-    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
-    storyShell.dataset.view = 'route';
-    storyPrimary.textContent = storyProgressState.storyCompleted ? 'Replay the Epilogue' : `Enter ${encounter.location}`;
-    storyLocation.textContent = `Checkpoint ${encounterIndex + 1} of ${storyEncounters.length} · ${encounter.sector}`;
-    storyIntro.textContent = storyProgressState.storyCompleted ? 'The route is quiet. Dawn has returned to the Broken Archive.' : encounter.narrative;
     storyShellStatus.textContent = storyProgressState.storyCompleted ? 'The completed route is open.' : `Route opened. ${encounter.location} is the current checkpoint.`;
   }
 
@@ -2125,6 +2176,12 @@
     showStoryTitle('New route ready at the Ash Gate.');
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
+  storyMapBack.addEventListener('click', () => showStoryTitle('Returned to the title. Route progress is saved.'));
+  storyMapContinue.addEventListener('click', () => {
+    const encounter = currentStoryEncounter();
+    storyMapObjective.textContent = encounter.narrative;
+    storyShellStatus.textContent = `${encounter.location} selected. The seal chamber is ahead.`;
+  });
 
   viewport.addEventListener('pointerdown', event => {
     if (busy) return;
