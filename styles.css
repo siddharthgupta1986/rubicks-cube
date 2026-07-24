@@ -37,6 +37,25 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .story-menu-heading button { width: auto; }
 .story-menu p { margin: 6px 0 0; color: #afbdc1; font-size: .82rem; line-height: 1.45; }
 .story-shell-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.story-map-screen { position: relative; z-index: 1; width: 100%; align-self: center; }
+.story-map-screen:not([hidden]) { display: grid; gap: 14px; }
+.story-map-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; }
+.story-map-heading h2 { margin: 0; color: #fff; font-size: clamp(1.8rem, 4vw, 3rem); letter-spacing: 0; }
+.story-map-heading p:not(.story-kicker) { margin: 8px 0 0; color: #c6d1d3; }
+.story-map-heading button { color: #fff; border-color: rgba(255,255,255,.45); background: rgba(8,14,17,.78); }
+.story-map-visual { position: relative; width: 100%; aspect-ratio: 3 / 2; overflow: hidden; border: 1px solid #566a70; border-radius: 6px; background: #111a1e url("assets/cube-warden/route-map.jpg") center / cover no-repeat; box-shadow: 0 16px 38px rgba(0,0,0,.38); }
+.story-route { position: absolute; inset: 0; z-index: 2; margin: 0; padding: 0; list-style: none; }
+.story-route-node { position: absolute; left: calc(var(--map-x) * 1%); top: calc(var(--map-y) * 1%); width: clamp(18px, 3vw, 30px); aspect-ratio: 1; display: grid; place-items: center; transform: translate(-50%, -50%) rotate(45deg); border: 2px solid #7d8a8e; color: transparent; background: #172226; box-shadow: 0 0 0 3px rgba(7,13,15,.58); }
+.story-route-node::before { content: ""; width: 38%; aspect-ratio: 1; border-radius: 50%; background: #69777b; }
+.story-route-node[data-state="completed"] { border-color: #75d0bc; background: #173d39; }
+.story-route-node[data-state="completed"]::before { background: #93ead6; }
+.story-route-node[data-state="current"] { border-color: #f1c667; background: #6a4b17; box-shadow: 0 0 0 4px rgba(8,14,17,.62), 0 0 24px #f1c667; }
+.story-route-node[data-state="current"]::before { background: #fff0b9; }
+.story-aya-marker { position: absolute; z-index: 3; left: calc(var(--aya-x) * 1%); top: calc(var(--aya-y) * 1%); width: clamp(30px, 6vw, 56px); aspect-ratio: 1; object-fit: cover; object-position: 50% 18%; transform: translate(-50%, -118%); border: 2px solid #f1c667; border-radius: 50%; box-shadow: 0 5px 18px rgba(0,0,0,.6); transition: left .9s ease, top .9s ease; }
+.story-aya-marker.is-travelling { animation: aya-travel .9s ease; }
+.story-route-summary { margin: 0; color: #c2ced1; font-size: .82rem; line-height: 1.5; }
+.story-map-screen > .story-primary { justify-self: start; }
+@keyframes aya-travel { 0% { opacity: .45; transform: translate(-50%, -118%) scale(.82); } 100% { opacity: 1; transform: translate(-50%, -118%) scale(1); } }
 .field-kit-heading { margin-bottom: 8px; }
 .eyebrow { margin: 0 0 9px; color: #91ccff; font-size: .77rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1; letter-spacing: -.06em; }
@@ -135,4 +154,5 @@ body[data-theme="high-contrast"] { --ink: #ffffff; --muted: #f0f0f0; --line: rgb
 @media (max-width: 760px) { .app { grid-template-columns: 1fr; } .content { text-align: center; } .actions, .tutor-actions, .notation { justify-content: center; } .cube-panel { order: -1; } .turns legend { margin-inline: auto; } .tutor-actions .button-primary { margin-left: 0; } }
 @media (max-width: 560px) { .academy-deck { grid-template-columns: 1fr; gap: 16px; } .academy-card-grid { grid-template-columns: 1fr; } }
 @media (max-width: 420px) { .app { padding: 23px 18px; } .turn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .turn-grid > div { grid-template-columns: 1fr 34px 34px; } .theme-control { width: 100%; align-items: stretch; flex-direction: column; gap: 6px; text-align: left; } .theme-control select { width: 100%; } .speedrun-heading { align-items: flex-start; flex-direction: column; gap: 8px; } .speedrun-time { font-size: 1.2rem; } .speedrun-actions button { flex: 1 1 auto; } .academy-nav-button { flex-basis: 80px; } }
+@media (max-width: 420px) { .story-map-heading { align-items: start; } .story-map-heading h2 { font-size: 1.5rem; } .story-map-visual { aspect-ratio: 1 / .82; } .story-map-screen > .story-primary { width: 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
