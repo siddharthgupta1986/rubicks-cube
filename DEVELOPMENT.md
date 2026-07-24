@@ -24,6 +24,7 @@
 - Define Story encounters as data with legal setup moves, validator and progress IDs, three hints, a target move count, and a pressure budget.
 - Sanitize `rubiks-cube.archive.v2` through `archive-state.js` before use. Invalid campaign data must fall back without deleting or rewriting legacy Story or Cube Academy records.
 - Route Story, Field Kit, Missions, Speedrun, Guided Solve, Daily Challenge, replay, and two-player transitions through the centralized cleanup contract.
+- Route Archive title, exploration, seal focus, pause, capture, epilogue, and Field Kit changes through `setArchiveRuntimePhase`; keep `data-archive-phase` in sync for diagnostics.
 - Retry must reverse only moves made after the active Story checkpoint. Leaving Story must restore solved state through legal inverse moves.
 - Do not use `innerHTML` for dynamic strings. Build DOM nodes with `document.createElement` and `textContent`.
 - Maintain keyboard operation and live status messages for any new workflow.
