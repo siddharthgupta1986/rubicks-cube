@@ -93,7 +93,8 @@
 
     function updateActor(actor, elapsedMs, context) {
       actor.stateElapsedMs += elapsedMs;
-      const travel = actor.speed * elapsedMs / 1000;
+      const threatScale = actor.state === 'pursuit' || actor.state === 'search' ? context.pursuitScale ?? 1 : 1;
+      const travel = actor.speed * threatScale * elapsedMs / 1000;
       if (actor.state === 'patrol') {
         if (moveToward(actor, actor.route[actor.routeIndex], travel)) actor.routeIndex = (actor.routeIndex + 1) % actor.route.length;
       } else if (actor.state === 'detection') {

@@ -21,6 +21,13 @@ assert.deepEqual(globalThis.CubeWardenWraiths.chooseSafeSpawn(
   4
 ), { id: 'safe', x: 8, z: 0 });
 assert.equal(globalThis.CubeWardenWraiths.chooseSafeSpawn([{ x: 0, z: 0 }], [{ x: 1, z: 0 }], 4), null);
+const standardPursuit = globalThis.CubeWardenWraiths.createSimulation(definitions);
+const slowPursuit = globalThis.CubeWardenWraiths.createSimulation(definitions);
+standardPursuit.signal('ash-wraith', 'confirm', { position: { x: 4, z: 0 } });
+slowPursuit.signal('ash-wraith', 'confirm', { position: { x: 4, z: 0 } });
+standardPursuit.update(100, { pursuitScale: 1 });
+slowPursuit.update(100, { pursuitScale: .55 });
+assert.ok(standardPursuit.snapshot()[0].x > slowPursuit.snapshot()[0].x);
 
 assert.deepEqual(simulation.snapshot()[0], {
   id: 'ash-wraith', state: 'patrol', x: 0, z: 0, headingX: 0, headingZ: -1, routeIndex: 1, stateElapsedMs: 0, lastKnown: null

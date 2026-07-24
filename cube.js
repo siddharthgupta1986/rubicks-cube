@@ -21,6 +21,7 @@
   const storyMenuClose = document.getElementById('story-menu-close');
   const storyNewGame = document.getElementById('story-new-game');
   const storyFieldKit = document.getElementById('story-field-kit');
+  const archivePursuitMode = document.getElementById('archive-pursuit-mode');
   const storyShellStatus = document.getElementById('story-shell-status');
   const archiveExploration = document.getElementById('archive-exploration');
   const archiveCanvas = document.getElementById('archive-canvas');
@@ -2030,7 +2031,7 @@
       return true;
     }
     if (event.key !== 'Tab') return false;
-    const focusable = [...storyMenu.querySelectorAll('button:not(:disabled)')];
+    const focusable = [...storyMenu.querySelectorAll('button:not(:disabled), select:not(:disabled)')];
     const first = focusable[0];
     const last = focusable[focusable.length - 1];
     if (!first || !last) return false;
@@ -2358,12 +2359,22 @@
 
   function updateArchiveWraithSimulation(delta) {
     const refugeActive = Boolean(archiveCanvas.dataset.refuge);
+    const pursuitMode = storyProgressState.accessibility.pursuit;
+    archiveCanvas.dataset.pursuitMode = pursuitMode;
     archiveWraithSimulation.snapshot().forEach(actor => {
+      if (pursuitMode === 'off' && actor.state !== 'patrol') {
+        archiveWraithSimulation.signal(actor.id, 'reset');
+        return;
+      }
+      if (refugeActive && actor.state !== 'patrol' && actor.state !== 'return') {
+        archiveWraithSimulation.signal(actor.id, 'return');
+        return;
+      }
       const dx = archivePlayer.x - actor.x;
       const dz = archivePlayer.z - actor.z;
       const distance = Math.hypot(dx, dz);
       const facing = distance ? (actor.headingX * dx + actor.headingZ * dz) / distance : 1;
-      const visible = !refugeActive && (distance <= 1.35 || (distance <= 8.5 && facing >= .34 && !archiveSightBlocked(actor, archivePlayer)));
+      const visible = pursuitMode !== 'off' && !refugeActive && (distance <= 1.35 || (distance <= 8.5 && facing >= .34 && !archiveSightBlocked(actor, archivePlayer)));
       if (visible && (actor.state === 'patrol' || actor.state === 'return')) {
         archiveWraithSimulation.signal(actor.id, 'notice', { position: archivePlayer });
       } else if (!visible && actor.state === 'detection') {
@@ -2374,7 +2385,8 @@
     });
     const actors = archiveWraithSimulation.update(delta * 1000, {
       paused: archiveRuntimePhase !== 'exploration',
-      player: { x: archivePlayer.x, z: archivePlayer.z }
+      player: { x: archivePlayer.x, z: archivePlayer.z },
+      pursuitScale: pursuitMode === 'slow' ? .55 : 1
     });
     const nearest = actors.reduce((result, actor) => {
       const distance = Math.hypot(actor.x - archivePlayer.x, actor.z - archivePlayer.z);
@@ -2387,9 +2399,10 @@
     archiveCanvas.dataset.wraithCount = String(actors.length);
     archiveCanvas.dataset.wraithState = nearest?.state || 'unavailable';
     archiveCanvas.dataset.wraithDistance = nearest ? nearest.distance.toFixed(2) : 'unavailable';
-    const threatState = refugeActive ? 'refuge' : nearest?.state || 'patrol';
+    const threatState = pursuitMode === 'off' ? 'off' : refugeActive ? 'refuge' : nearest?.state || 'patrol';
     const labels = {
       refuge: 'Ward active · Wraiths cannot detect you',
+      off: 'Exploration mode · Wraiths do not chase',
       patrol: 'Wraith patrol nearby',
       detection: 'Warning · A Wraith is noticing you',
       pursuit: 'Danger · Wraith pursuit',
@@ -2427,6 +2440,19 @@
     startArchiveRenderer();
     storyShellStatus.textContent = 'Checkpoint restored. The Wraith patrol reset to its authored route.';
     archiveCanvas.focus();
+  }
+
+  function updateArchivePursuitPreference() {
+    storyProgressState.accessibility = { pursuit: archivePursuitMode.value };
+    if (archivePursuitMode.value === 'off') {
+      archiveWraithSimulation.snapshot().forEach(actor => archiveWraithSimulation.signal(actor.id, 'reset'));
+    }
+    saveStoryProgress();
+    storyShellStatus.textContent = archivePursuitMode.value === 'standard'
+      ? 'Standard Wraith pursuit enabled.'
+      : archivePursuitMode.value === 'slow'
+        ? 'Slower Wraith pursuit enabled. Story progress is unchanged.'
+        : 'Exploration-only mode enabled. Wraiths patrol but cannot detect or capture Aya.';
   }
 
   function archiveSightBlocked(from, to) {
@@ -3554,6 +3580,7 @@
   });
   storyMenuClose.addEventListener('click', resumeArchiveAfterPause);
   storyFieldKit.addEventListener('click', openFieldKit);
+  archivePursuitMode.addEventListener('change', updateArchivePursuitPreference);
   fieldKitExit.addEventListener('click', exitFieldKitToStory);
   storyNewGame.addEventListener('click', () => {
     if (!window.confirm('Start a new Archive campaign? This resets only Cube Warden campaign progress.')) return;
@@ -3693,6 +3720,7 @@
   renderTwoPlayerHistory();
   academyProgressState = loadAcademyProgress();
   storyProgressState = loadStoryProgress();
+  archivePursuitMode.value = storyProgressState.accessibility.pursuit;
   restoreArchiveCheckpointPosition();
   renderAcademyDeck();
   setAcademyScreen('journey');
