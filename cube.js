@@ -325,9 +325,11 @@
   let archiveProgram = null;
   let archiveVertexBuffer = null;
   let archiveWraithBuffer = null;
+  let archiveAtmosphereBuffer = null;
   let archiveTexture = null;
   let archiveVertexCount = 0;
   let archiveWraithVertexCount = 0;
+  let archiveAtmosphereVertexCount = 0;
   let archiveWraithSnapshot = [];
   let archiveGeometrySignature = '';
   let archivePendingWorldChange = null;
@@ -374,7 +376,8 @@
     seal: Object.freeze({ tint: Object.freeze([1.25,.86,.32]), atlas: Object.freeze([2/3,.5,1,1]) }),
     wraith: Object.freeze({ tint: Object.freeze([.32,.48,.62]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
     wraithWarn: Object.freeze({ tint: Object.freeze([.78,.68,.35]), atlas: Object.freeze([1/3,.5,2/3,1]) }),
-    wraithPursuit: Object.freeze({ tint: Object.freeze([.95,.32,.28]), atlas: Object.freeze([0,.5,1/3,1]) })
+    wraithPursuit: Object.freeze({ tint: Object.freeze([.95,.32,.28]), atlas: Object.freeze([0,.5,1/3,1]) }),
+    particle: Object.freeze({ tint: Object.freeze([1.18,.92,.42]), atlas: Object.freeze([2/3,.5,1,1]) })
   });
   const archiveWorld = Object.freeze({
     bounds: Object.freeze({ minimum: Object.freeze([-6,0,-182]), maximum: Object.freeze([104,5,5]) }),
@@ -2093,13 +2096,17 @@
       varying vec2 vUv;
       varying float vDepth;
       uniform float uPulse;
+      uniform float uThreat;
       uniform sampler2D uTexture;
       void main() {
-        float fog = smoothstep(8.0, 34.0, vDepth);
-        float light = 0.82 + uPulse * 0.12;
+        float fog = smoothstep(7.0, 40.0, vDepth);
+        float light = 0.76 + uPulse * 0.16;
         vec3 material = texture2D(uTexture, vUv).rgb;
-        vec3 litColor = material * vColor * light;
-        gl_FragColor = vec4(mix(litColor, vec3(0.012, 0.027, 0.032), fog), 1.0);
+        float emission = max(0.0, max(vColor.r, max(vColor.g, vColor.b)) - 1.0);
+        vec3 litColor = material * vColor * light + material * emission * (0.28 + uPulse * 0.28);
+        litColor = mix(litColor, litColor * vec3(1.18, 0.62, 0.55), uThreat * 0.32);
+        vec3 fogColor = mix(vec3(0.012, 0.027, 0.032), vec3(0.12, 0.025, 0.022), uThreat * 0.55);
+        gl_FragColor = vec4(mix(litColor, fogColor, fog), 1.0);
       }
     `);
     const program = gl.createProgram();
@@ -2194,6 +2201,22 @@
         addArchiveBox(vertices, [orbitX-.12, 1.25, orbitZ-.12], [orbitX+.12, 1.65, orbitZ+.12], 'wraithWarn');
       }
     });
+    return new Float32Array(vertices);
+  }
+
+  function createArchiveAtmosphereGeometry(time) {
+    const vertices = [];
+    const count = reducedMotion ? 18 : 48;
+    for (let index = 0; index < count; index += 1) {
+      const angle = index * 2.399963;
+      const radius = 1.8 + index % 8 * .68;
+      const drift = reducedMotion ? 0 : Math.sin(time * .00035 + index * 1.31) * .55;
+      const x = archivePlayer.x + Math.cos(angle) * radius + drift * .18;
+      const z = archivePlayer.z + Math.sin(angle) * radius;
+      const y = .32 + (index * .47 % 2.9) + drift;
+      const size = .025 + index % 3 * .014;
+      addArchiveBox(vertices, [x-size,y-size,z-size], [x+size,y+size,z+size], 'particle');
+    }
     return new Float32Array(vertices);
   }
 
@@ -2300,7 +2323,7 @@
   }
 
   function initializeArchiveRenderer() {
-    if (archiveGl && archiveProgram && archiveVertexBuffer && archiveWraithBuffer && archiveTexture) return true;
+    if (archiveGl && archiveProgram && archiveVertexBuffer && archiveWraithBuffer && archiveAtmosphereBuffer && archiveTexture) return true;
     const gl = archiveCanvas.getContext('webgl', { alpha: false, antialias: true, powerPreference: 'high-performance' });
     if (!gl) {
       archiveRendererAvailable = false;
@@ -2311,6 +2334,7 @@
       archiveProgram = createArchiveProgram(gl);
       archiveVertexBuffer = gl.createBuffer();
       archiveWraithBuffer = gl.createBuffer();
+      archiveAtmosphereBuffer = gl.createBuffer();
       const geometry = createArchiveBootstrapGeometry();
       archiveVertexCount = geometry.length / 8;
       gl.bindBuffer(gl.ARRAY_BUFFER, archiveVertexBuffer);
@@ -2675,6 +2699,7 @@
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uView'), false, view);
     gl.uniformMatrix4fv(gl.getUniformLocation(archiveProgram, 'uProjection'), false, projection);
     gl.uniform1f(gl.getUniformLocation(archiveProgram, 'uPulse'), (Math.sin(archiveElapsedTime * 2.2) + 1) / 2);
+    gl.uniform1f(gl.getUniformLocation(archiveProgram, 'uThreat'), archiveCanvas.dataset.wraithState === 'pursuit' ? 1 : archiveCanvas.dataset.wraithState === 'detection' ? .45 : 0);
     gl.uniform1i(gl.getUniformLocation(archiveProgram, 'uTexture'), 0);
     bindArchiveGeometry(archiveVertexBuffer);
     gl.drawArrays(gl.TRIANGLES, 0, archiveVertexCount);
@@ -2684,8 +2709,17 @@
     gl.bufferData(gl.ARRAY_BUFFER, wraithGeometry, gl.DYNAMIC_DRAW);
     bindArchiveGeometry(archiveWraithBuffer);
     gl.drawArrays(gl.TRIANGLES, 0, archiveWraithVertexCount);
+    const atmosphereGeometry = createArchiveAtmosphereGeometry(time);
+    archiveAtmosphereVertexCount = atmosphereGeometry.length / 8;
+    gl.bindBuffer(gl.ARRAY_BUFFER, archiveAtmosphereBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, atmosphereGeometry, gl.DYNAMIC_DRAW);
+    bindArchiveGeometry(archiveAtmosphereBuffer);
+    gl.drawArrays(gl.TRIANGLES, 0, archiveAtmosphereVertexCount);
     archiveCanvas.dataset.wraithVertices = String(archiveWraithVertexCount);
     archiveCanvas.dataset.wraithVisualState = archiveWraithSnapshot.find(actor => actor.state !== 'patrol')?.state || 'patrol';
+    archiveCanvas.dataset.atmosphereVertices = String(archiveAtmosphereVertexCount);
+    archiveCanvas.dataset.particleCount = String(reducedMotion ? 18 : 48);
+    archiveCanvas.dataset.fog = 'depth-40';
     archiveAnimationFrame = window.requestAnimationFrame(renderArchiveFrame);
   }
 
