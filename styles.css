@@ -56,6 +56,26 @@ body { min-width: 320px; min-height: 100vh; margin: 0; padding: clamp(20px, 5vw,
 .story-route-summary { margin: 0; color: #c2ced1; font-size: .82rem; line-height: 1.5; }
 .story-map-screen > .story-primary { justify-self: start; }
 @keyframes aya-travel { 0% { opacity: .45; transform: translate(-50%, -118%) scale(.82); } 100% { opacity: 1; transform: translate(-50%, -118%) scale(1); } }
+.story-encounter-panel { min-width: 0; align-self: stretch; display: grid; align-content: center; padding: clamp(22px, 4vw, 42px); border: 1px solid #4e6268; border-radius: 8px; color: #edf3f3; background: #111a1e; box-shadow: 0 18px 42px rgba(14,27,34,.2); }
+.story-encounter-panel h1 { margin: 0; color: #fff; font-size: clamp(2rem, 5vw, 3.5rem); letter-spacing: 0; line-height: 1; }
+.story-encounter-narrative, .story-gameplay-objective, .story-victory p { color: #bdc9cc; line-height: 1.55; }
+.story-objective-card { margin: 22px 0; padding: 15px; border-left: 3px solid #f1c667; background: #1e2a2e; }
+.story-objective-card span { color: #e6c06b; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+.story-objective-card p { margin: 6px 0 0; color: #fff; font-weight: 700; line-height: 1.45; }
+.story-encounter-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.story-encounter-actions button:not(.story-primary), .story-turn-grid button { color: #eef4f4; border-color: #52666c; background: #243237; }
+.story-gameplay-metrics { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 18px 0 12px; color: #d8e2e3; font-size: .82rem; font-weight: 750; }
+.story-turns { margin: 0 0 16px; padding: 0; border: 0; }
+.story-turns legend { margin-bottom: 8px; color: #e6c06b; font-size: .72rem; font-weight: 800; text-transform: uppercase; }
+.story-turn-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
+.story-turn-grid button { min-width: 0; min-height: 42px; padding: 0 5px; font-weight: 800; }
+.story-encounter-status { min-height: 1.4em; margin: 14px 0 0; color: #f0d792; font-size: .82rem; }
+.story-victory { padding: 20px 0; }
+.story-victory .story-primary { margin-top: 12px; }
+body[data-experience="story-encounter"] { color: #eef4f4; background: #10191c; }
+body[data-experience="story-encounter"] .app { align-items: stretch; gap: clamp(18px, 4vw, 42px); padding: clamp(18px, 4vw, 38px); border-color: #344a50; background: #172226; }
+body[data-experience="story-encounter"] .cube-panel { overflow: hidden; place-content: center; border: 1px solid #4e6268; border-radius: 8px; background: linear-gradient(rgba(8,14,17,.38), rgba(8,14,17,.72)), url("assets/cube-warden/encounter-chamber.jpg") center / cover; }
+body[data-experience="story-encounter"] .drag-tip { color: #eef4f4; text-shadow: 0 1px 4px #000; }
 .field-kit-heading { margin-bottom: 8px; }
 .eyebrow { margin: 0 0 9px; color: #91ccff; font-size: .77rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 h1 { margin: 0; font-size: clamp(2.25rem, 5vw, 4rem); line-height: 1; letter-spacing: -.06em; }
@@ -155,4 +175,5 @@ body[data-theme="high-contrast"] { --ink: #ffffff; --muted: #f0f0f0; --line: rgb
 @media (max-width: 560px) { .academy-deck { grid-template-columns: 1fr; gap: 16px; } .academy-card-grid { grid-template-columns: 1fr; } }
 @media (max-width: 420px) { .app { padding: 23px 18px; } .turn-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .turn-grid > div { grid-template-columns: 1fr 34px 34px; } .theme-control { width: 100%; align-items: stretch; flex-direction: column; gap: 6px; text-align: left; } .theme-control select { width: 100%; } .speedrun-heading { align-items: flex-start; flex-direction: column; gap: 8px; } .speedrun-time { font-size: 1.2rem; } .speedrun-actions button { flex: 1 1 auto; } .academy-nav-button { flex-basis: 80px; } }
 @media (max-width: 420px) { .story-map-heading { align-items: start; } .story-map-heading h2 { font-size: 1.5rem; } .story-map-visual { aspect-ratio: 1 / .82; } .story-map-screen > .story-primary { width: 100%; } }
+@media (max-width: 420px) { .story-encounter-panel { padding: 20px 16px; } .story-turn-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } .story-encounter-actions button { flex: 1 1 100%; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }

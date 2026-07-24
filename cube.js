@@ -29,6 +29,28 @@
   const storyRoute = document.getElementById('story-route');
   const storyRouteSummary = document.getElementById('story-route-summary');
   const storyAyaMarker = document.getElementById('story-aya-marker');
+  const storyEncounterPanel = document.getElementById('story-encounter-panel');
+  const storyBriefing = document.getElementById('story-briefing');
+  const storyEncounterSector = document.getElementById('story-encounter-sector');
+  const storyEncounterTitle = document.getElementById('story-encounter-title');
+  const storyEncounterNarrative = document.getElementById('story-encounter-narrative');
+  const storyEncounterObjective = document.getElementById('story-encounter-objective');
+  const storyEnterSeal = document.getElementById('story-enter-seal');
+  const storyBriefingMap = document.getElementById('story-briefing-map');
+  const storyGameplay = document.getElementById('story-gameplay');
+  const storyGameplaySector = document.getElementById('story-gameplay-sector');
+  const storyGameplayTitle = document.getElementById('story-gameplay-title');
+  const storyGameplayObjective = document.getElementById('story-gameplay-objective');
+  const storyMoveCount = document.getElementById('story-move-count');
+  const storyProgressLabel = document.getElementById('story-progress-label');
+  const storyTurnControls = document.getElementById('story-turn-controls');
+  const storyRetry = document.getElementById('story-retry');
+  const storyGameplayMap = document.getElementById('story-gameplay-map');
+  const storyVictory = document.getElementById('story-victory');
+  const storyVictoryTitle = document.getElementById('story-victory-title');
+  const storyVictorySummary = document.getElementById('story-victory-summary');
+  const storyVictoryContinue = document.getElementById('story-victory-continue');
+  const storyEncounterStatus = document.getElementById('story-encounter-status');
   const fieldKitContent = document.getElementById('field-kit-content');
   const fieldKitCube = document.getElementById('field-kit-cube');
   const fieldKitExit = document.getElementById('field-kit-exit');
@@ -237,6 +259,11 @@
   let tutorStep = 0;
   let academyProgressState = { version: 1, completed: [], lastViewed: 0 };
   let storyProgressState = null;
+  let storyEncounterActive = false;
+  let storyPreparing = false;
+  let storyCheckpointIndex = 0;
+  let storyPlayerMoves = 0;
+  let storyTargetSignature = '';
   const academyChapterTitles = ['Orientation', 'White cross', 'First layer', 'Middle layer', 'Yellow cross', 'Final solve'];
   let academyScreenState = 'journey';
   const lessonDrafts = [
@@ -1196,6 +1223,63 @@
     solved: isSolvedState
   };
 
+  function solvedCubieCount(predicate) {
+    const positions = new Set(stickers.filter(predicate).map(sticker => sticker.position.join(',')));
+    return [...positions].filter(positionKey => {
+      const position = positionKey.split(',').map(Number);
+      return stickers.filter(sticker => sticker.position.every((value, index) => value === position[index])).every(isSolvedAtPosition);
+    }).length;
+  }
+
+  function whiteEdgeCount() {
+    return solvedCubieCount(sticker => sticker.position[1] === 1 && [sticker.position[0], sticker.position[2]].filter(value => value !== 0).length === 1);
+  }
+
+  function whiteCornerCount() {
+    return solvedCubieCount(sticker => sticker.position[1] === 1 && sticker.position[0] !== 0 && sticker.position[2] !== 0);
+  }
+
+  function middleEdgeCount() {
+    return solvedCubieCount(sticker => sticker.position[1] === 0 && [sticker.position[0], sticker.position[2]].filter(value => value !== 0).length === 1);
+  }
+
+  function yellowFaceComplete() {
+    return stickers.filter(sticker => sticker.normal[1] === -1).every(sticker => sticker.color === 'yellow');
+  }
+
+  function stickerSignature(source = stickers) {
+    return source.map(sticker => `${key(sticker.position, sticker.normal)}:${sticker.color}`).sort().join('|');
+  }
+
+  function simulatedSignature(moves) {
+    const simulated = stickers.map(sticker => ({ position: sticker.position.slice(), normal: sticker.normal.slice(), color: sticker.color }));
+    moves.forEach(move => {
+      const { face, rotations } = parseMove(move);
+      const axis = faces[face].n;
+      for (let pass = 0; pass < rotations; pass += 1) simulated.forEach(sticker => {
+        if (dot(sticker.position, axis) === 1) {
+          sticker.position = rotateVector(sticker.position, axis);
+          sticker.normal = rotateVector(sticker.normal, axis);
+        }
+      });
+    });
+    return stickerSignature(simulated);
+  }
+
+  const storyValidators = Object.freeze({
+    sequence: () => stickerSignature() === storyTargetSignature,
+    solved: isSolvedState,
+    whiteEdgesTwo: () => whiteEdgeCount() >= 2,
+    whiteCross: isWhiteCrossComplete,
+    whiteCornerOne: () => whiteCornerCount() >= 1,
+    firstLayer: isFirstLayerComplete,
+    middleEdgeOne: () => middleEdgeCount() >= 1,
+    middleLayer: isMiddleLayerComplete,
+    yellowCross: isYellowCrossComplete,
+    yellowFace: yellowFaceComplete,
+    lastLayerPositioned: isYellowCornersPlaced
+  });
+
   function isGuidedStageComplete() {
     return guidedChecks[lessons[tutorStep].success]();
   }
@@ -1264,6 +1348,7 @@
       finishTwoPlayerRound(twoPlayerState.activeIndex);
       renderTwoPlayer();
     }
+    if (record && storyEncounterActive && !storyPreparing) updateStoryAfterTurn(move);
     if (record) checkActiveMission();
   }
 
@@ -1504,6 +1589,7 @@
     dailyChallengeButton.disabled = value;
     solveButton.disabled = value || history.length === 0;
     controls.disabled = value;
+    storyTurnControls.disabled = value;
   }
 
   function defaultStoryProgress() {
@@ -1580,6 +1666,7 @@
     storyMapScreen.hidden = true;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
+    storyEncounterPanel.hidden = true;
     storyPrimary.textContent = hasStoryProgress() ? 'Continue the Route' : 'Begin the Route';
     const encounter = currentStoryEncounter();
     const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
@@ -1621,10 +1708,130 @@
     storyMapScreen.hidden = false;
     fieldKitContent.hidden = true;
     fieldKitCube.hidden = true;
+    storyEncounterPanel.hidden = true;
     document.body.dataset.experience = 'story-map';
     saveStoryProgress();
     renderStoryMap(travel);
+    const encounter = currentStoryEncounter();
+    storyShellStatus.textContent = storyProgressState.storyCompleted ? 'All twelve seals are restored.' : `${encounter.location} is the current checkpoint.`;
     storyMapContinue.focus();
+  }
+
+  function showStoryBriefing() {
+    const encounter = currentStoryEncounter();
+    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
+    storyShell.hidden = true;
+    fieldKitContent.hidden = true;
+    fieldKitCube.hidden = false;
+    storyEncounterPanel.hidden = false;
+    storyBriefing.hidden = false;
+    storyGameplay.hidden = true;
+    storyVictory.hidden = true;
+    storyEncounterSector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} of ${storyEncounters.length}`;
+    storyEncounterTitle.textContent = encounter.location;
+    storyEncounterNarrative.textContent = encounter.narrative;
+    storyEncounterObjective.textContent = encounter.objective;
+    storyEncounterStatus.textContent = 'Read the objective, then enter the seal.';
+    document.body.dataset.experience = 'story-encounter';
+    storyEnterSeal.focus();
+  }
+
+  function storyEncounterComplete() {
+    const encounter = currentStoryEncounter();
+    return Boolean(storyValidators[encounter.validatorId]?.());
+  }
+
+  async function startStoryEncounter() {
+    if (busy) return;
+    const encounter = currentStoryEncounter();
+    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
+    clearChallengeState('story');
+    storyEncounterActive = false;
+    storyPreparing = true;
+    history = [];
+    initialize();
+    storyEncounterStatus.textContent = `Preparing the ${encounter.location} seal…`;
+    await runSequence(encounter.setupMoves, true);
+    storyCheckpointIndex = history.length;
+    storyPlayerMoves = 0;
+    storyTargetSignature = encounter.validatorId === 'sequence' ? simulatedSignature(['R', 'U', "R'", "U'"]) : '';
+    storyPreparing = false;
+    storyEncounterActive = true;
+    storyBriefing.hidden = true;
+    storyVictory.hidden = true;
+    storyGameplay.hidden = false;
+    storyGameplaySector.textContent = `${encounter.sector} · Seal ${encounterIndex + 1} active`;
+    storyGameplayTitle.textContent = encounter.location;
+    storyGameplayObjective.textContent = encounter.objective;
+    storyMoveCount.textContent = 'Moves: 0';
+    storyProgressLabel.textContent = 'Seal progress: active';
+    storyEncounterStatus.textContent = `${encounter.location} ready. Make legal face turns to restore the seal.`;
+    storyTurnControls.disabled = false;
+    storyTurnControls.querySelector('button').focus();
+  }
+
+  function updateStoryAfterTurn() {
+    if (!storyEncounterActive) return;
+    storyPlayerMoves += 1;
+    storyMoveCount.textContent = `Moves: ${storyPlayerMoves}`;
+    storyProgressLabel.textContent = storyEncounterComplete() ? 'Seal progress: restored' : 'Seal progress: working';
+    if (storyEncounterComplete()) completeStoryEncounter();
+  }
+
+  function completeStoryEncounter() {
+    if (!storyEncounterActive) return;
+    storyEncounterActive = false;
+    const encounter = currentStoryEncounter();
+    const encounterIndex = storyEncounters.findIndex(item => item.id === encounter.id);
+    if (!storyProgressState.completedEncounterIds.includes(encounter.id)) storyProgressState.completedEncounterIds.push(encounter.id);
+    const previousBest = storyProgressState.bestMoveCounts[encounter.id];
+    storyProgressState.bestMoveCounts[encounter.id] = previousBest ? Math.min(previousBest, storyPlayerMoves) : storyPlayerMoves;
+    const finalEncounter = encounterIndex === storyEncounters.length - 1;
+    storyProgressState.storyCompleted = finalEncounter;
+    if (!finalEncounter) storyProgressState.currentEncounterId = storyEncounters[encounterIndex + 1].id;
+    saveStoryProgress();
+    storyGameplay.hidden = true;
+    storyVictory.hidden = false;
+    storyVictoryTitle.textContent = finalEncounter ? 'The Dawn Vault opens' : `${encounter.location} secured`;
+    storyVictorySummary.textContent = finalEncounter ? `All twelve seals are restored. Aya completed the final seal in ${storyPlayerMoves} moves.` : `The seal holds. ${storyPlayerMoves} moves recorded; the route to ${storyEncounters[encounterIndex + 1].location} is open.`;
+    storyVictoryContinue.textContent = finalEncounter ? 'See the Restored Route' : 'Continue the Route';
+    storyEncounterStatus.textContent = `Seal restored in ${storyPlayerMoves} moves.`;
+    storyVictoryContinue.focus();
+  }
+
+  async function retryStoryEncounter() {
+    if (busy || !storyCheckpointIndex && history.length === 0) return;
+    storyEncounterActive = false;
+    const playerMoves = history.slice(storyCheckpointIndex);
+    storyEncounterStatus.textContent = 'Returning to the seal checkpoint…';
+    await runSequence(playerMoves.reverse().map(inverse), false);
+    history.splice(storyCheckpointIndex);
+    storyPlayerMoves = 0;
+    storyMoveCount.textContent = 'Moves: 0';
+    storyProgressLabel.textContent = 'Seal progress: active';
+    storyEncounterActive = true;
+    storyProgressState.retries += 1;
+    saveStoryProgress();
+    storyEncounterStatus.textContent = 'Checkpoint restored. Try the seal again.';
+  }
+
+  async function leaveStoryEncounterToMap() {
+    if (busy) return;
+    storyEncounterActive = false;
+    storyPreparing = true;
+    if (history.length) await runSequence([...history].reverse().map(inverse), false);
+    history = [];
+    storyPreparing = false;
+    updateCubeLabel();
+    showStoryMap();
+  }
+
+  function continueStoryRoute() {
+    storyEncounterPanel.hidden = true;
+    fieldKitCube.hidden = true;
+    history = [];
+    initialize();
+    showStoryMap(true);
   }
 
   function openFieldKit() {
@@ -1632,6 +1839,7 @@
     storyShell.hidden = true;
     fieldKitContent.hidden = false;
     fieldKitCube.hidden = false;
+    storyEncounterPanel.hidden = true;
     document.body.dataset.experience = 'field-kit';
     status.textContent = 'Field Kit opened. Story progress is unchanged.';
     fieldKitExit.focus();
@@ -2177,11 +2385,18 @@
   });
   storyPrimary.addEventListener('click', enterStoryRoute);
   storyMapBack.addEventListener('click', () => showStoryTitle('Returned to the title. Route progress is saved.'));
-  storyMapContinue.addEventListener('click', () => {
-    const encounter = currentStoryEncounter();
-    storyMapObjective.textContent = encounter.narrative;
-    storyShellStatus.textContent = `${encounter.location} selected. The seal chamber is ahead.`;
+  storyMapContinue.addEventListener('click', showStoryBriefing);
+  storyEnterSeal.addEventListener('click', startStoryEncounter);
+  storyBriefingMap.addEventListener('click', () => showStoryMap());
+  storyTurnControls.addEventListener('click', event => {
+    const button = event.target.closest('button[data-story-move]');
+    if (!button || busy || !storyEncounterActive) return;
+    turn(button.dataset.storyMove);
+    if (storyEncounterActive) storyEncounterStatus.textContent = `${button.dataset.storyMove} turn applied.`;
   });
+  storyRetry.addEventListener('click', retryStoryEncounter);
+  storyGameplayMap.addEventListener('click', leaveStoryEncounterToMap);
+  storyVictoryContinue.addEventListener('click', continueStoryRoute);
 
   viewport.addEventListener('pointerdown', event => {
     if (busy) return;

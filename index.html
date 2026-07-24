@@ -47,6 +47,55 @@
       <p class="story-shell-status" id="story-shell-status" role="status" aria-live="polite"></p>
     </section>
 
+    <section class="story-encounter-panel" id="story-encounter-panel" hidden aria-labelledby="story-encounter-title">
+      <div class="story-briefing" id="story-briefing">
+        <p class="story-kicker" id="story-encounter-sector">Ash Gate · Seal 1 of 12</p>
+        <h1 id="story-encounter-title">Gatehouse</h1>
+        <p class="story-encounter-narrative" id="story-encounter-narrative"></p>
+        <div class="story-objective-card">
+          <span>Cube objective</span>
+          <p id="story-encounter-objective"></p>
+        </div>
+        <div class="story-encounter-actions">
+          <button class="story-primary" type="button" id="story-enter-seal">Enter Seal</button>
+          <button type="button" id="story-briefing-map">Return to Map</button>
+        </div>
+      </div>
+
+      <div class="story-gameplay" id="story-gameplay" hidden>
+        <p class="story-kicker" id="story-gameplay-sector">Ash Gate · Active seal</p>
+        <h1 id="story-gameplay-title">Gatehouse</h1>
+        <p class="story-gameplay-objective" id="story-gameplay-objective"></p>
+        <div class="story-gameplay-metrics">
+          <span id="story-move-count">Moves: 0</span>
+          <span id="story-progress-label">Seal progress: waiting</span>
+        </div>
+        <fieldset class="story-turns" id="story-turn-controls">
+          <legend>Turn a face</legend>
+          <div class="story-turn-grid">
+            <button type="button" data-story-move="U">U</button><button type="button" data-story-move="U'">U′</button>
+            <button type="button" data-story-move="R">R</button><button type="button" data-story-move="R'">R′</button>
+            <button type="button" data-story-move="F">F</button><button type="button" data-story-move="F'">F′</button>
+            <button type="button" data-story-move="D">D</button><button type="button" data-story-move="D'">D′</button>
+            <button type="button" data-story-move="L">L</button><button type="button" data-story-move="L'">L′</button>
+            <button type="button" data-story-move="B">B</button><button type="button" data-story-move="B'">B′</button>
+          </div>
+        </fieldset>
+        <div class="story-encounter-actions">
+          <button type="button" id="story-retry">Retry Seal</button>
+          <button type="button" id="story-gameplay-map">Return to Map</button>
+        </div>
+      </div>
+
+      <div class="story-victory" id="story-victory" hidden>
+        <p class="story-kicker">Seal restored</p>
+        <h1 id="story-victory-title">Gatehouse secured</h1>
+        <p id="story-victory-summary"></p>
+        <button class="story-primary" type="button" id="story-victory-continue">Continue the Route</button>
+      </div>
+      <p class="story-encounter-status" id="story-encounter-status" role="status" aria-live="polite"></p>
+    </section>
+
     <section class="content" id="field-kit-content" hidden>
       <p class="eyebrow">Cube Academy / Training grounds</p>
       <div class="field-kit-heading">
@@ -265,6 +314,6 @@
       </div>
     </section>
   </main>
-  <script src="cube.js?v=cube-warden-3"></script>
+  <script src="cube.js?v=cube-warden-4"></script>
 </body>
 </html>
